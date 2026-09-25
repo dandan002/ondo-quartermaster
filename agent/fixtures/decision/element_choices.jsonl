@@ -1,0 +1,4 @@
+{"id": "t01", "criteria": "the button that submits the account form", "options": ["link \"Accounts\"", "textbox \"Annual value\"", "button \"Cancel\"", "button \"Submit\"", "link \"Help\""], "expected": "button \"Submit\""}
+{"id": "t02", "criteria": "the annual value input field", "options": ["textbox \"Account name\"", "textbox \"Annual value\"", "button \"Save\"", "combobox \"Currency\""], "expected": "textbox \"Annual value\""}
+{"id": "t03", "criteria": "the search box for accounts", "options": ["searchbox \"Search accounts\"", "button \"New account\"", "link \"Reports\""], "expected": "searchbox \"Search accounts\""}
+{"id": "t04", "criteria": "link to the next page of results", "options": ["link \"Previous page\"", "link \"Next page\"", "button \"Export\""], "expected": "link \"Next page\""}

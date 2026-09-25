@@ -1,0 +1,54 @@
+# Ondo agent configuration. Everything that must hold lives here, enforced by the
+# harness, never in prompt text. Copy to ondo.yaml and adjust.
+
+agent:
+  runs_dir: .ondo/runs
+  decision_labels: .ondo/decisions.jsonl
+
+models:
+  profiles_file: config/profiles.yaml
+  orchestrator: ${ONDO_MODEL_PROFILE:-demo}
+  fallbacks: []
+
+# The user's grants on this device. When connected, the control plane sends these.
+grants:
+  files:
+    granted: true
+    folders: ["demo/Northwind client drive"]
+  screen:
+    granted: false
+  input:
+    granted: true   # the browser acts on the user's behalf, so it needs this grant
+
+# Set by the administrator. Not grantable by the user.
+policy:
+  excluded_paths: ["**/HR/**", "**/*payroll*", "**/*password*"]
+  excluded_windows: ["Personal mail", "HR portal", "Password manager"]
+  writes_require_approval: true
+
+decision:
+  provider: rules          # rules | jev (see decision/jev.py before enabling)
+
+screening:
+  enabled: true
+  threshold: 0.5
+
+gates:
+  thresholds_file: config/thresholds.json
+  rules:
+    - {effect: submits_to_system_of_record, action: require, name: billing-portal-submit,
+       url: "http://127.0.0.1:8765/*", element: '^button "(Submit|Save)'}
+    - {effect: overwrites_shared_file, action: require, name: shared-drives, path: "**/shares/**"}
+
+browser:
+  enabled: true
+  headless: true
+  allowed_origins: ["http://127.0.0.1:8765"]
+  blocked_origins: []
+  profile_dir: .ondo/browser-profile
+  executable_path: ${ONDO_CHROMIUM:-}
+  no_sandbox: false
+
+budget:
+  max_steps: 40
+  max_tokens: 1000000

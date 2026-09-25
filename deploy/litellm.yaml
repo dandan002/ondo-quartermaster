@@ -1,0 +1,32 @@
+# Self-hosted LiteLLM gateway: the agent's single egress point for model calls.
+# The agent names *aliases* (orchestrator, extractor); this file maps them to real
+# deployments. Swapping a provider is an edit here plus an eval run, never a code
+# change. Keep credentials in the environment, not in this file.
+#
+#   litellm --config deploy/litellm.yaml --port 4000
+#
+# Fill in the model names for the providers you have contracts with, or point an
+# alias at a model you host yourself (vLLM, TGI) with an openai/ prefix and api_base.
+
+model_list:
+  - model_name: orchestrator
+    litellm_params:
+      model: ${ORCHESTRATOR_PRIMARY}          # e.g. <provider>/<strongest model you have>
+      api_key: os.environ/ORCHESTRATOR_PRIMARY_KEY
+  - model_name: orchestrator
+    litellm_params:
+      model: ${ORCHESTRATOR_SECONDARY}        # a second provider, for failover and for the eval table
+      api_key: os.environ/ORCHESTRATOR_SECONDARY_KEY
+  - model_name: extractor
+    litellm_params:
+      model: openai/${EXTRACTOR_SELF_HOSTED}  # a small model you host
+      api_base: ${EXTRACTOR_API_BASE}
+
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2
+
+litellm_settings:
+  drop_params: true
+  # Keep logs inside the boundary.
+  success_callback: []
