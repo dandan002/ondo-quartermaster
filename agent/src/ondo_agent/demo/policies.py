@@ -64,13 +64,17 @@ def parse_workbook(results: list[tuple[str, str]]) -> dict[str, dict[str, Any]]:
         for line in text.splitlines():
             m = re.match(r"A(\d+): ([^|]+?) \| B\1: (\S+) .*?D\1: ([\d.]+) \| E\1: ([\d.]+)", line)
             if m:
-                rows[m.group(2).strip().title()] = {"row": int(m.group(1)), "file": m.group(3),
-                                                    "current": int(float(m.group(4))), "pct": float(m.group(5))}
+                rows[m.group(2).strip().title()] = {
+                    "row": int(m.group(1)),
+                    "file": m.group(3),
+                    "current": int(float(m.group(4))),
+                    "pct": float(m.group(5)),
+                }
     return rows
 
 
 def renewal_pack_policy(drive: Path, *, threshold_pct: float = 5.0):
-    """"Build the Q3 renewal pack for Northwind from the contracts in the client folder,
+    """ "Build the Q3 renewal pack for Northwind from the contracts in the client folder,
     and flag anything that uplifts above five per cent." Files only."""
     contracts_dir = drive / "Contracts"
     workbook = drive / "Q3_Renewals.xlsx"
@@ -81,8 +85,11 @@ def renewal_pack_policy(drive: Path, *, threshold_pct: float = 5.0):
         results = _tool_results(messages)
         if t == 0:
             # Independent reads go in one turn.
-            return call(("list_folder", {"path": str(drive)}), ("list_folder", {"path": str(contracts_dir)}),
-                        text="I'll look through the client folder first.")
+            return call(
+                ("list_folder", {"path": str(drive)}),
+                ("list_folder", {"path": str(contracts_dir)}),
+                text="I'll look through the client folder first.",
+            )
         if t == 1:
             listing = next((r for n, r in results if n == "list_folder" and (".pdf" in r or ".docx" in r)), "")
             files = re.findall(r"^(\S+\.(?:pdf|docx))\s", listing, re.MULTILINE)
@@ -98,21 +105,36 @@ def renewal_pack_policy(drive: Path, *, threshold_pct: float = 5.0):
                 if c and abs(c["uplift"] - row["pct"]) > 1e-9:
                     edits.append({"sheet": "Renewals", "cell": f"E{row['row']}", "value": c["uplift"]})
                     disagreements.append(name)
-            rows: list[list[Any]] = [["Account", "Contract", "Current annual value", "Uplift %", "New annual value",
-                                      "Change", "Flag"]]
+            rows: list[list[Any]] = [
+                ["Account", "Contract", "Current annual value", "Uplift %", "New annual value", "Change", "Flag"]
+            ]
             for name in sorted(contracts):
                 c = contracts[name]
                 flag = []
                 if c["uplift"] > threshold_pct:
                     flag.append(f"above {threshold_pct:g}%")
                 if name in disagreements:
-                    flag.append(f"workbook said {book[name]['pct']:g}%; contract clause {c['clause']} says {c['uplift']:g}%")
-                rows.append([name, c["file"], c["current"], c["uplift"], c["new"], c["new"] - c["current"], "; ".join(flag)])
+                    flag.append(
+                        f"workbook said {book[name]['pct']:g}%; contract clause {c['clause']} says {c['uplift']:g}%"
+                    )
+                rows.append(
+                    [name, c["file"], c["current"], c["uplift"], c["new"], c["new"] - c["current"], "; ".join(flag)]
+                )
             calls = []
             if edits:
-                calls.append(("edit_workbook", {"path": str(workbook), "edits": edits,
-                                                "reason": "Match the signed contracts: " + ", ".join(disagreements) + "."}))
-            calls.append(("create_workbook", {"path": str(pack), "sheets": [{"name": "Q3 renewal pack", "rows": rows}]}))
+                calls.append(
+                    (
+                        "edit_workbook",
+                        {
+                            "path": str(workbook),
+                            "edits": edits,
+                            "reason": "Match the signed contracts: " + ", ".join(disagreements) + ".",
+                        },
+                    )
+                )
+            calls.append(
+                ("create_workbook", {"path": str(pack), "sheets": [{"name": "Q3 renewal pack", "rows": rows}]})
+            )
             return call(*calls)
         # Report.
         changed = {n: c for n, c in contracts.items() if c["new"] != c["current"]}
@@ -120,11 +142,15 @@ def renewal_pack_policy(drive: Path, *, threshold_pct: float = 5.0):
         above = [n for n, c in contracts.items() if c["uplift"] > threshold_pct]
         disagreements = [n for n, r in book.items() if n in contracts and abs(contracts[n]["uplift"] - r["pct"]) > 1e-9]
         not_saved = [text for n, text in results if text.startswith("Not written")]
-        lines = [f"I read {len(contracts)} contracts and the Q3 workbook.",
-                 f"{len(changed)} of {len(contracts)} accounts change at renewal, adding {total:,} to total annual value."]
+        lines = [
+            f"I read {len(contracts)} contracts and the Q3 workbook.",
+            f"{len(changed)} of {len(contracts)} accounts change at renewal, adding {total:,} to total annual value.",
+        ]
         for n in disagreements:
-            lines.append(f"{n}: the workbook had {book[n]['pct']:g}%; the signed contract (clause 7.2) says "
-                         f"{contracts[n]['uplift']:g}%.")
+            lines.append(
+                f"{n}: the workbook had {book[n]['pct']:g}%; the signed contract (clause 7.2) says "
+                f"{contracts[n]['uplift']:g}%."
+            )
         lines.append(f"Above {threshold_pct:g}%: " + (", ".join(above) if above else "none."))
         if not_saved:
             lines.append("Some changes were not approved, so nothing was saved for them.")
@@ -140,7 +166,7 @@ _BUTTON = re.compile(r'button "Submit" \[ref=([A-Za-z0-9_-]+)\]')
 
 
 def renewal_submit_policy(drive: Path, portal_url: str):
-    """"Key the Q3 renewal changes from the signed contracts into the billing portal."
+    """ "Key the Q3 renewal changes from the signed contracts into the billing portal."
     Document store (granted folder) and a web portal, driven through the
     accessibility tree only. Text-only: no images are requested or read."""
     contracts_dir = drive / "Contracts"
@@ -162,7 +188,9 @@ def renewal_submit_policy(drive: Path, portal_url: str):
             for name, ref, current in _FIELD.findall(last):
                 c = contracts.get(name.title())
                 if c and current and c["new"] != int(current):
-                    fields.append({"ref": ref, "name": f"Annual value — {name}", "type": "textbox", "value": str(c["new"])})
+                    fields.append(
+                        {"ref": ref, "name": f"Annual value — {name}", "type": "textbox", "value": str(c["new"])}
+                    )
             if not fields:
                 return say("The portal already matches the signed contracts. Nothing to key.")
             return call(("browser_fill_form", {"fields": fields}))
@@ -194,7 +222,9 @@ def demo_router(cfg, profile):
 
     def policy(messages: list[Message], tools) -> ModelResponse:
         if "p" not in chosen:
-            request = next((m.text for m in messages if m.role == "user" and not m.text.startswith("<environment>")), "")
+            request = next(
+                (m.text for m in messages if m.role == "user" and not m.text.startswith("<environment>")), ""
+            )
             r = request.lower()
             if any(w in r for w in ("billing app", "desktop app", "legacy")):
                 chosen["p"] = legacy_app_policy(drive, profile.extra.get("legacy_window", "Legacy billing"))
@@ -214,8 +244,10 @@ def _spreadsheet_question(drive: Path):
         t = _turns(messages)
         results = _tool_results(messages)
         if t == 0:
-            return call(("read_file", {"path": str(drive / "Q3_Renewals.xlsx")}),
-                        ("read_file", {"path": str(drive / "Contracts" / "Halleck_MSA_2026.pdf")}))
+            return call(
+                ("read_file", {"path": str(drive / "Q3_Renewals.xlsx")}),
+                ("read_file", {"path": str(drive / "Contracts" / "Halleck_MSA_2026.pdf")}),
+            )
         book = parse_workbook(results)
         contracts = parse_contracts(results)
         row = next(((n, r) for n, r in book.items() if r["row"] == 14), None)
@@ -224,16 +256,18 @@ def _spreadsheet_question(drive: Path):
         name, r = row
         c = contracts.get(name)
         if c and abs(c["uplift"] - r["pct"]) > 1e-9:
-            return say(f"Row 14 is {name}. The workbook has a {r['pct']:g}% uplift; the signed contract "
-                       f"({c['file']}, clause 7.2) says {c['uplift']:g}%. The workbook figure looks like it was "
-                       f"carried over from last year's pack.\n\nI can correct row 14 and re-run the pack totals. Shall I?")
+            return say(
+                f"Row 14 is {name}. The workbook has a {r['pct']:g}% uplift; the signed contract "
+                f"({c['file']}, clause 7.2) says {c['uplift']:g}%. The workbook figure looks like it was "
+                f"carried over from last year's pack.\n\nI can correct row 14 and re-run the pack totals. Shall I?"
+            )
         return say(f"Row 14 is {name}, and it matches the contract.")
 
     return policy
 
 
 def legacy_app_policy(drive: Path, window: str = "Legacy billing", *, between=None):
-    """"Update Halleck Logistics' annual value in the legacy billing app from the signed
+    """ "Update Halleck Logistics' annual value in the legacy billing app from the signed
     contract." Reads the contract, then drives the app by naming controls in words.
     It never inspects the window to pick a target: the decision layer does that.
     ``between`` runs after typing and before submitting (the tests move the window)."""
@@ -249,8 +283,12 @@ def legacy_app_policy(drive: Path, window: str = "Legacy billing", *, between=No
         if t == 1:
             if not c:
                 return say("I could not read the new annual value from the contract.")
-            return call(("desktop_act", {"window": window, "target": "Annual value field", "action": "set_text",
-                                         "text": str(c["new"])}))
+            return call(
+                (
+                    "desktop_act",
+                    {"window": window, "target": "Annual value field", "action": "set_text", "text": str(c["new"])},
+                )
+            )
         if t == 2:
             if between:
                 between()

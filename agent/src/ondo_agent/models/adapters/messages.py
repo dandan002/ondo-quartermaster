@@ -11,6 +11,7 @@ from typing import Any
 
 import httpx
 
+from ...tools.spec import ToolSpec, to_messages_tools
 from ..profile import ModelProfile
 from ..types import (
     ContextLengthError,
@@ -22,9 +23,14 @@ from ..types import (
     ToolCall,
     Usage,
 )
-from ...tools.spec import ToolSpec, to_messages_tools
 
-_STOP = {"end_turn": "end", "stop_sequence": "end", "tool_use": "tool_use", "max_tokens": "max_tokens", "refusal": "refusal"}
+_STOP = {
+    "end_turn": "end",
+    "stop_sequence": "end",
+    "tool_use": "tool_use",
+    "max_tokens": "max_tokens",
+    "refusal": "refusal",
+}
 
 
 def _content(m: Message, profile: ModelProfile) -> list[dict[str, Any]]:
@@ -35,7 +41,9 @@ def _content(m: Message, profile: ModelProfile) -> list[dict[str, Any]]:
     if profile.supports_vision:
         for p in m.parts:
             if isinstance(p, ImagePart):
-                out.append({"type": "image", "source": {"type": "base64", "media_type": p.media_type, "data": p.data_b64}})
+                out.append(
+                    {"type": "image", "source": {"type": "base64", "media_type": p.media_type, "data": p.data_b64}}
+                )
     return out
 
 
@@ -54,12 +62,17 @@ def build_request(profile: ModelProfile, messages: list[Message], tools: list[To
         if m.role == "system":
             continue
         if m.role == "tool":
-            push("user", [{
-                "type": "tool_result",
-                "tool_use_id": m.tool_call_id,
-                "content": m.text,
-                **({"is_error": True} if m.is_error else {}),
-            }])
+            push(
+                "user",
+                [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": m.tool_call_id,
+                        "content": m.text,
+                        **({"is_error": True} if m.is_error else {}),
+                    }
+                ],
+            )
         elif m.role == "assistant":
             blocks = _content(m, profile)
             for c in m.tool_calls:
@@ -106,7 +119,9 @@ def parse_response(data: dict[str, Any]) -> ModelResponse:
         text="".join(text),
         tool_calls=calls,
         stop_reason=_STOP.get(raw, "end"),  # type: ignore[arg-type]
-        usage=Usage(u.get("input_tokens", 0) or 0, u.get("output_tokens", 0) or 0, u.get("cache_read_input_tokens", 0) or 0),
+        usage=Usage(
+            u.get("input_tokens", 0) or 0, u.get("output_tokens", 0) or 0, u.get("cache_read_input_tokens", 0) or 0
+        ),
         model=data.get("model", ""),
         reasoning="".join(reasoning),
         raw_stop_reason=raw,
@@ -137,7 +152,8 @@ class MessagesAdapter:
             if r.status_code in (400, 413) and ("too long" in text or "context" in text and "exceed" in text):
                 raise ContextLengthError(text, status=r.status_code)
             raise ModelError(
-                f"{r.status_code}: {text}", retryable=r.status_code in (408, 409, 429, 529) or r.status_code >= 500,
+                f"{r.status_code}: {text}",
+                retryable=r.status_code in (408, 409, 429, 529) or r.status_code >= 500,
                 status=r.status_code,
             )
         return parse_response(r.json())

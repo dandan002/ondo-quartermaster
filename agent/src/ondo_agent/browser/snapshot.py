@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import re
 
-_LINE = re.compile(r'^\s*-\s+(?P<role>[a-z]+)(?:\s+"(?P<name>(?:[^"\\]|\\.)*)")?(?P<attrs>(?:\s+\[[^\]]*\])*)(?::\s*(?P<value>.*))?$')
+_LINE = re.compile(
+    r'^\s*-\s+(?P<role>[a-z]+)(?:\s+"(?P<name>(?:[^"\\]|\\.)*)")?(?P<attrs>(?:\s+\[[^\]]*\])*)(?::\s*(?P<value>.*))?$'
+)
 _REF = re.compile(r"\[ref=([A-Za-z0-9_-]+)\]")
 FIELD_ROLES = {"textbox", "searchbox", "combobox", "spinbutton", "checkbox", "radio", "slider"}
 
@@ -38,8 +40,14 @@ def elements(text: str) -> list[dict[str, str]]:
         value = (m.group("value") or "").strip()
         if value.startswith('"') and value.endswith('"') and len(value) >= 2:
             value = value[1:-1]
-        out.append({"role": m.group("role"), "name": (m.group("name") or "").replace('\\"', '"'),
-                    "ref": ref.group(1), "value": value})
+        out.append(
+            {
+                "role": m.group("role"),
+                "name": (m.group("name") or "").replace('\\"', '"'),
+                "ref": ref.group(1),
+                "value": value,
+            }
+        )
     return out
 
 

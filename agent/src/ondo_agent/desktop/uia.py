@@ -8,16 +8,29 @@ a WinForms or Win32 equivalent) before relying on it.
 
 from __future__ import annotations
 
+import logging
 import threading
 
 from .model import Element, StaleElement, Window, number_occurrences
 
+_log = logging.getLogger("ondo.agent")
+
 # UIA control types, mapped to the neutral role names the tools use.
 _ROLE = {
-    "Button": "push button", "Edit": "text", "Text": "label", "CheckBox": "check box",
-    "RadioButton": "radio button", "ComboBox": "combo box", "MenuItem": "menu item",
-    "Hyperlink": "link", "ListItem": "list item", "TabItem": "page tab", "Document": "document text",
-    "Spinner": "spin button", "Slider": "slider", "DataItem": "table cell",
+    "Button": "push button",
+    "Edit": "text",
+    "Text": "label",
+    "CheckBox": "check box",
+    "RadioButton": "radio button",
+    "ComboBox": "combo box",
+    "MenuItem": "menu item",
+    "Hyperlink": "link",
+    "ListItem": "list item",
+    "TabItem": "page tab",
+    "Document": "document text",
+    "Spinner": "spin button",
+    "Slider": "slider",
+    "DataItem": "table cell",
 }
 
 
@@ -40,9 +53,11 @@ class UiaBackend:
             for w in self._desktop().windows():
                 try:
                     info = w.element_info
-                    out.append(Window(id=str(info.handle), title=info.name or "", app=_proc_name(w),
-                                      pid=w.process_id()))
+                    out.append(
+                        Window(id=str(info.handle), title=info.name or "", app=_proc_name(w), pid=w.process_id())
+                    )
                 except Exception:
+                    _log.debug("UIA window vanished while listing", exc_info=True)
                     continue
         return out
 
@@ -66,12 +81,14 @@ class UiaBackend:
                     states.add("enabled")
                 if role in ("text", "document text") and not getattr(c, "is_read_only", lambda: True)():
                     states.add("editable")
-                actions = ("click",) if role in ("push button", "menu item", "link", "check box", "radio button") else ()
+                actions = (
+                    ("click",) if role in ("push button", "menu item", "link", "check box", "radio button") else ()
+                )
                 value = ""
                 try:
                     value = c.get_value() if hasattr(c, "get_value") else (c.window_text() or "")
                 except Exception:
-                    pass
+                    _log.debug("UIA value read failed for %s", role, exc_info=True)
                 out.append(Element(role, info.name or "", str(value or ""), frozenset(states), actions, 0, handle=c))
         return number_occurrences(out)
 

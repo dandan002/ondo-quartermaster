@@ -18,10 +18,19 @@ import threading
 from .model import Element, StaleElement, Window, number_occurrences
 
 _ROLE = {
-    "AXButton": "push button", "AXTextField": "text", "AXTextArea": "text", "AXStaticText": "label",
-    "AXCheckBox": "check box", "AXRadioButton": "radio button", "AXPopUpButton": "combo box",
-    "AXComboBox": "combo box", "AXMenuItem": "menu item", "AXLink": "link", "AXCell": "table cell",
-    "AXSlider": "slider", "AXIncrementor": "spin button",
+    "AXButton": "push button",
+    "AXTextField": "text",
+    "AXTextArea": "text",
+    "AXStaticText": "label",
+    "AXCheckBox": "check box",
+    "AXRadioButton": "radio button",
+    "AXPopUpButton": "combo box",
+    "AXComboBox": "combo box",
+    "AXMenuItem": "menu item",
+    "AXLink": "link",
+    "AXCell": "table cell",
+    "AXSlider": "slider",
+    "AXIncrementor": "spin button",
 }
 
 
@@ -41,8 +50,10 @@ class AxBackend:
         from ApplicationServices import AXIsProcessTrusted
 
         if not AXIsProcessTrusted():
-            raise PermissionError("Allow Ondo in System Settings → Privacy & Security → Accessibility. "
-                                  "macOS does not let Ondo approve this for you.")
+            raise PermissionError(
+                "Allow Ondo in System Settings → Privacy & Security → Accessibility. "
+                "macOS does not let Ondo approve this for you."
+            )
         self._lock = threading.Lock()
 
     def _apps(self):
@@ -59,8 +70,14 @@ class AxBackend:
                 pid = app.processIdentifier()
                 ax = AXUIElementCreateApplication(pid)
                 for i, w in enumerate(_attr(ax, "AXWindows") or []):
-                    out.append(Window(id=f"{pid}#{i}", title=str(_attr(w, "AXTitle") or ""),
-                                      app=str(app.localizedName() or ""), pid=pid))
+                    out.append(
+                        Window(
+                            id=f"{pid}#{i}",
+                            title=str(_attr(w, "AXTitle") or ""),
+                            app=str(app.localizedName() or ""),
+                            pid=pid,
+                        )
+                    )
         return out
 
     def _window(self, window: Window):
@@ -89,9 +106,21 @@ class AxBackend:
                     states.add("editable")
                 if _attr(el, "AXFocused"):
                     states.add("focused")
-                actions = ("press",) if ax_role in ("AXButton", "AXCheckBox", "AXRadioButton", "AXMenuItem", "AXLink") else ()
+                actions = (
+                    ("press",) if ax_role in ("AXButton", "AXCheckBox", "AXRadioButton", "AXMenuItem", "AXLink") else ()
+                )
                 if ax_role not in ("AXGroup", "AXScrollArea", "AXSplitGroup") or name:
-                    out.append(Element(role, name, "" if value is None else str(value), frozenset(states), actions, depth, handle=el))
+                    out.append(
+                        Element(
+                            role,
+                            name,
+                            "" if value is None else str(value),
+                            frozenset(states),
+                            actions,
+                            depth,
+                            handle=el,
+                        )
+                    )
                 for c in _attr(el, "AXChildren") or []:
                     walk(c, depth + 1)
 

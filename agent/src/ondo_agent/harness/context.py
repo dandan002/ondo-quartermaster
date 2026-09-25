@@ -78,8 +78,15 @@ def build(events: list[Event], policy: ContextPolicy, *, aggressive: bool = Fals
             # A call the run never executed (it stopped, or a fork cut it off)
             # still needs an answer, or no provider will accept the history.
             for cid, name in pending.items():
-                msgs.append(Message("tool", [TextPart("Not executed: the run stopped before this call ran.")],
-                                    tool_call_id=cid, tool_name=name, is_error=True))
+                msgs.append(
+                    Message(
+                        "tool",
+                        [TextPart("Not executed: the run stopped before this call ran.")],
+                        tool_call_id=cid,
+                        tool_name=name,
+                        is_error=True,
+                    )
+                )
             pending.clear()
 
         for e in events:
@@ -109,8 +116,13 @@ def build(events: list[Event], policy: ContextPolicy, *, aggressive: bool = Fals
                     content = _stub(e)
                     collapsed.append(e.seq)
                 msgs.append(
-                    Message("tool", [TextPart(content)], tool_call_id=d["call_id"], tool_name=d.get("name"),
-                            is_error=bool(d.get("is_error")))
+                    Message(
+                        "tool",
+                        [TextPart(content)],
+                        tool_call_id=d["call_id"],
+                        tool_name=d.get("name"),
+                        is_error=bool(d.get("is_error")),
+                    )
                 )
         flush()
         out = [Message.system("\n\n".join(system))] if system else []

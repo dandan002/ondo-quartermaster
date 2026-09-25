@@ -6,8 +6,7 @@ with no GUI automation anywhere, and every write shows a diff first.
 
 from __future__ import annotations
 
-from pathlib import Path
-
+from conftest import base_config
 from openpyxl import load_workbook
 
 from ondo_agent import log as L
@@ -16,13 +15,13 @@ from ondo_agent.demo.northwind import ACCOUNTS, TOTAL_INCREASE
 from ondo_agent.demo.policies import renewal_pack_policy
 from ondo_agent.models.adapters.scripted import call, say
 from ondo_agent.models.gateway import scripted_client
-from ondo_agent.permissions import PermissionBroker, Grant, Policy
+from ondo_agent.permissions import Grant, PermissionBroker, Policy
 from ondo_agent.runtime import assemble
 
-from conftest import base_config
-
-REQUEST = ("Build the Q3 renewal pack for Northwind from the contracts in the client folder, "
-           "and flag anything that uplifts above five per cent.")
+REQUEST = (
+    "Build the Q3 renewal pack for Northwind from the contracts in the client folder, "
+    "and flag anything that uplifts above five per cent."
+)
 
 
 async def test_renewal_pack_end_to_end(drive, tmp_path):
@@ -39,13 +38,22 @@ async def test_renewal_pack_end_to_end(drive, tmp_path):
     reads = [e for e in events if e.type == L.FILE_ACCESS and e.data["op"] == "read"]
     assert len(reads) == 13
     # No GUI automation anywhere: only file tools were called.
-    assert {e.data["name"] for e in events if e.type == L.TOOL_CALL} <= {"list_folder", "read_file", "edit_workbook", "create_workbook"}
+    assert {e.data["name"] for e in events if e.type == L.TOOL_CALL} <= {
+        "list_folder",
+        "read_file",
+        "edit_workbook",
+        "create_workbook",
+    }
 
     # Every write: diff first, then the approval, then the edit.
     for tool in ("edit_workbook", "create_workbook"):
         diff = next(e for e in events if e.type == L.DIFF_PROPOSED and e.source == f"tool:{tool}")
         req = next(e for e in events if e.type == L.APPROVAL_REQUESTED and e.data["tool"] == tool)
-        edited = next(e for e in events if e.type == L.FILE_ACCESS and e.data["op"] == "edited" and e.data["path"] == diff.data["path"])
+        edited = next(
+            e
+            for e in events
+            if e.type == L.FILE_ACCESS and e.data["op"] == "edited" and e.data["path"] == diff.data["path"]
+        )
         assert diff.seq < req.seq < edited.seq
         assert req.data["diff"] == diff.data["diff"]
     wb_diff = next(e for e in events if e.type == L.DIFF_PROPOSED and e.source == "tool:edit_workbook")
@@ -67,25 +75,35 @@ async def test_renewal_pack_end_to_end(drive, tmp_path):
 async def test_refused_write_changes_nothing(drive, tmp_path):
     before = (drive / "Q3_Renewals.xlsx").read_bytes()
     cfg = base_config(drive, tmp_path)
-    a = await assemble(cfg, model=scripted_client(renewal_pack_policy(drive)), approvals=AutoApprovals(False, by="mara.okonjo"))
+    a = await assemble(
+        cfg, model=scripted_client(renewal_pack_policy(drive)), approvals=AutoApprovals(False, by="mara.okonjo")
+    )
     res = await a.harness.run(REQUEST)
     assert res.status == "finished"
     assert "not approved" in res.answer
     assert (drive / "Q3_Renewals.xlsx").read_bytes() == before
     assert not (drive / "Q3_Renewal_Pack.xlsx").exists()
-    results = [e.data["content"] for e in a.log.of_type(L.TOOL_RESULT) if e.data["name"] in ("edit_workbook", "create_workbook")]
+    results = [
+        e.data["content"]
+        for e in a.log.of_type(L.TOOL_RESULT)
+        if e.data["name"] in ("edit_workbook", "create_workbook")
+    ]
     assert all(r.startswith("Not written") and "mara.okonjo" in r for r in results)
 
 
 async def test_permissions_are_enforced_not_suggested(drive, tmp_path):
     outside = tmp_path / "elsewhere.txt"
     outside.write_text("secret")
-    policy_calls = iter([
-        call(("read_file", {"path": str(drive / "HR" / "Payroll_2026_confidential.xlsx")}),
-             ("read_file", {"path": str(outside)}),
-             ("read_file", {"path": str(drive / "Q3_Renewals.xlsx")})),
-        say("done"),
-    ])
+    policy_calls = iter(
+        [
+            call(
+                ("read_file", {"path": str(drive / "HR" / "Payroll_2026_confidential.xlsx")}),
+                ("read_file", {"path": str(outside)}),
+                ("read_file", {"path": str(drive / "Q3_Renewals.xlsx")}),
+            ),
+            say("done"),
+        ]
+    )
     cfg = base_config(drive, tmp_path)
     a = await assemble(cfg, model=scripted_client(lambda m, t: next(policy_calls)), approvals=AutoApprovals(True))
     await a.harness.run("read these")
@@ -97,9 +115,11 @@ async def test_permissions_are_enforced_not_suggested(drive, tmp_path):
 
 
 def test_policy_exclusions_are_not_grantable(tmp_path):
-    b = PermissionBroker(policy=Policy(excluded_paths=["**/HR/**"], excluded_windows=["Password manager"],
-                                       disabled_grants=["input"]))
+    b = PermissionBroker(
+        policy=Policy(excluded_paths=["**/HR/**"], excluded_windows=["Password manager"], disabled_grants=["input"])
+    )
     import pytest
+
     from ondo_agent.permissions import PermissionDenied
 
     with pytest.raises(PermissionDenied):

@@ -41,7 +41,7 @@ class ModelProfile:
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "ModelProfile":
+    def from_dict(cls, d: dict[str, Any]) -> ModelProfile:
         known = {f.name for f in fields(cls)}
         extra = {k: v for k, v in d.items() if k not in known}
         kwargs = {k: v for k, v in d.items() if k in known}

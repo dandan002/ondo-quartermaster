@@ -11,8 +11,9 @@ from __future__ import annotations
 import asyncio
 import sys
 import uuid
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 
 @dataclass

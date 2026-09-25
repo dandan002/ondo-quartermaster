@@ -12,6 +12,7 @@ from typing import Any
 
 import httpx
 
+from ...tools.spec import ToolSpec, to_openai_tools
 from ..profile import ModelProfile
 from ..types import (
     ContextLengthError,
@@ -23,7 +24,6 @@ from ..types import (
     ToolCall,
     Usage,
 )
-from ...tools.spec import ToolSpec, to_openai_tools
 
 _STOP = {"stop": "end", "tool_calls": "tool_use", "length": "max_tokens", "content_filter": "refusal"}
 
@@ -55,9 +55,7 @@ def build_request(profile: ModelProfile, messages: list[Message], tools: list[To
                 if isinstance(p, TextPart):
                     content.append({"type": "text", "text": p.text})
             for p in images:
-                content.append(
-                    {"type": "image_url", "image_url": {"url": f"data:{p.media_type};base64,{p.data_b64}"}}
-                )
+                content.append({"type": "image_url", "image_url": {"url": f"data:{p.media_type};base64,{p.data_b64}"}})
             wire.append({"role": m.role, "content": content})
         else:
             wire.append({"role": m.role, "content": m.text})
@@ -129,7 +127,8 @@ class OpenAIChatAdapter:
             if r.status_code == 400 and ("context_length" in text or "maximum context" in text):
                 raise ContextLengthError(text, status=400)
             raise ModelError(
-                f"{r.status_code}: {text}", retryable=r.status_code in (408, 409, 429) or r.status_code >= 500,
+                f"{r.status_code}: {text}",
+                retryable=r.status_code in (408, 409, 429) or r.status_code >= 500,
                 status=r.status_code,
             )
         return parse_response(r.json())

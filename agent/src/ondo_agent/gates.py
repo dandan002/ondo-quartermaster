@@ -96,7 +96,7 @@ class GateRule:
         return True
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "GateRule":
+    def from_dict(cls, d: dict[str, Any]) -> GateRule:
         return cls(**d)
 
 
@@ -115,8 +115,11 @@ class GateDecision:
     by_effect: dict[str, EffectVerdict] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"required": self.required, "effects": self.effects,
-                "by_effect": {k: asdict(v) for k, v in self.by_effect.items()}}
+        return {
+            "required": self.required,
+            "effects": self.effects,
+            "by_effect": {k: asdict(v) for k, v in self.by_effect.items()},
+        }
 
 
 class GateKeeper:
@@ -136,7 +139,9 @@ class GateKeeper:
         data = json.loads(Path(path).read_text())
         return {k: float(v) for k, v in data.get("thresholds", {}).items()}
 
-    async def evaluate(self, action: ProposedAction, *, log: EventLog | None = None, tainted: bool = False) -> GateDecision:
+    async def evaluate(
+        self, action: ProposedAction, *, log: EventLog | None = None, tainted: bool = False
+    ) -> GateDecision:
         verdicts: dict[str, EffectVerdict] = {}
         if action.max_effect == "read":
             d = GateDecision(False, [], {})
@@ -173,9 +178,19 @@ class GateKeeper:
         gated = [e for e in EFFECTS if verdicts[e].gated]
         decision = GateDecision(bool(gated), gated, verdicts)
         if log is not None:
-            log.append(GATE, "gates", {"tool": action.tool, "description": action.description,
-                                       "url": action.url, "path": action.path, "element": action.element,
-                                       "tainted": tainted, **decision.to_dict()})
+            log.append(
+                GATE,
+                "gates",
+                {
+                    "tool": action.tool,
+                    "description": action.description,
+                    "url": action.url,
+                    "path": action.path,
+                    "element": action.element,
+                    "tainted": tainted,
+                    **decision.to_dict(),
+                },
+            )
         return decision
 
 

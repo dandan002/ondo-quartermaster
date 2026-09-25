@@ -22,6 +22,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from conftest import base_config
 
 from ondo_agent import log as L
 from ondo_agent.connection import ControlPlaneAgent, pair
@@ -29,13 +30,13 @@ from ondo_agent.demo.policies import renewal_pack_policy
 from ondo_agent.log import EventLog
 from ondo_agent.models.gateway import scripted_client
 
-from conftest import base_config
-
 ROOT = Path(__file__).resolve().parents[2]
 TSX = ROOT / "node_modules" / ".bin" / "tsx"
 PASSWORD = "quartermaster-demo"
 
-pytestmark = pytest.mark.skipif(not TSX.exists() or shutil.which("node") is None, reason="control plane not installed (npm install)")
+pytestmark = pytest.mark.skipif(
+    not TSX.exists() or shutil.which("node") is None, reason="control plane not installed (npm install)"
+)
 
 
 def _free_port() -> int:
@@ -49,10 +50,18 @@ def _free_port() -> int:
 @pytest.fixture
 def server(tmp_path):
     port = _free_port()
-    env = {**os.environ, "ONDO_DEV": "1", "ONDO_SEED": "demo", "PORT": str(port), "ONDO_DB": str(tmp_path / "cp.sqlite"),
-           "ONDO_PUBLIC_URL": f"http://127.0.0.1:{port}", "ONDO_WEB_DIST": str(tmp_path / "no-web")}
-    proc = subprocess.Popen([str(TSX), "src/main.ts"], cwd=ROOT / "server", env=env,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    env = {
+        **os.environ,
+        "ONDO_DEV": "1",
+        "ONDO_SEED": "demo",
+        "PORT": str(port),
+        "ONDO_DB": str(tmp_path / "cp.sqlite"),
+        "ONDO_PUBLIC_URL": f"http://127.0.0.1:{port}",
+        "ONDO_WEB_DIST": str(tmp_path / "no-web"),
+    }
+    proc = subprocess.Popen(
+        [str(TSX), "src/main.ts"], cwd=ROOT / "server", env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     url = f"http://127.0.0.1:{port}"
     for _ in range(100):
         try:
@@ -94,16 +103,22 @@ async def test_admin_revokes_a_grant_mid_run_and_the_run_stops(server, drive, tm
         code = (await mara.post("/api/pairing", json={})).json()["code"]
         creds = await pair(server, code, tmp_path / "agent.json")
         cfg = base_config(drive, tmp_path, grants={})
-        agent = ControlPlaneAgent(cfg, creds, model_factory=lambda: scripted_client(renewal_pack_policy(drive), name="scripted"))
+        agent = ControlPlaneAgent(
+            cfg, creds, model_factory=lambda: scripted_client(renewal_pack_policy(drive), name="scripted")
+        )
         conn = asyncio.create_task(agent.run_forever())
         try:
             await _wait(lambda: _connected(mara))
             # Nothing is granted by pairing; grant files for the client drive.
-            r = await mara.put(f"/api/agents/{creds.agent_id}/grants/files", json={"granted": True, "scope": [str(drive)]})
+            r = await mara.put(
+                f"/api/agents/{creds.agent_id}/grants/files", json={"granted": True, "scope": [str(drive)]}
+            )
             assert r.status_code == 200 and r.json()["delivered"]
             await _wait(lambda: _async(agent.state.grants["files"].granted))
 
-            run_id = (await mara.post("/api/runs", json={"request": "Build the Q3 renewal pack for Northwind."})).json()["run_id"]
+            run_id = (
+                await mara.post("/api/runs", json={"request": "Build the Q3 renewal pack for Northwind."})
+            ).json()["run_id"]
             # The run reads the drive and stops at the first write, waiting for a person.
             pending = await _wait(lambda: _pending(mara))
             assert pending[0]["run_id"] == run_id and "file_write" in pending[0]["effects"]
@@ -168,20 +183,30 @@ async def test_desktop_run_through_the_control_plane(server, desktop, drive, tmp
         code = (await mara.post("/api/pairing", json={})).json()["code"]
         creds = await pair(server, code, tmp_path / "agent.json")
         cfg = base_config(drive, tmp_path, grants={}, desktop={"enabled": True, "escape_twice": True})
-        agent = ControlPlaneAgent(cfg, creds, model_factory=lambda: scripted_client(legacy_app_policy(drive), name="scripted"))
+        agent = ControlPlaneAgent(
+            cfg, creds, model_factory=lambda: scripted_client(legacy_app_policy(drive), name="scripted")
+        )
         conn = asyncio.create_task(agent.run_forever())
         try:
             await _wait(lambda: _connected(mara))
             caps = (await mara.get("/api/pairing/status")).json()["agent"]["capabilities"]
             assert caps["screen"] and caps["desktop"] and not caps["pixels"]
             # Policy-excluded windows cannot be granted, whoever asks.
-            r = await mara.put(f"/api/agents/{creds.agent_id}/grants/screen", json={"granted": True, "scope": ["Password manager"]})
+            r = await mara.put(
+                f"/api/agents/{creds.agent_id}/grants/screen", json={"granted": True, "scope": ["Password manager"]}
+            )
             assert r.status_code == 403
             for kind, scope in (("files", [str(drive)]), ("screen", ["Legacy billing"]), ("input", [])):
-                assert (await mara.put(f"/api/agents/{creds.agent_id}/grants/{kind}", json={"granted": True, "scope": scope})).status_code == 200
+                assert (
+                    await mara.put(
+                        f"/api/agents/{creds.agent_id}/grants/{kind}", json={"granted": True, "scope": scope}
+                    )
+                ).status_code == 200
             await _wait(lambda: _async(agent.state.grants["input"].granted))
 
-            run_id = (await mara.post("/api/runs", json={"request": "Update Halleck in the legacy billing app."})).json()["run_id"]
+            run_id = (
+                await mara.post("/api/runs", json={"request": "Update Halleck in the legacy billing app."})
+            ).json()["run_id"]
             pending = await _wait(lambda: _pending(mara))
             assert pending[0]["effects"] == ["submits_to_system_of_record"]
             assert pending[0]["values"][0]["before"] == "184500" and pending[0]["values"][0]["after"] == "193725"
@@ -193,7 +218,6 @@ async def test_desktop_run_through_the_control_plane(server, desktop, drive, tmp
                 audit = (await admin.get("/api/admin/audit", params={"limit": 1000})).json()
             acted = [r for r in audit if r["action"] == "agent.window.acted"]
             assert [r["detail"]["action"] for r in acted] == ["set_text", "click"]
-            import threading; print("THREADS", [t.name for t in threading.enumerate()])
         finally:
             agent.stop()
             conn.cancel()

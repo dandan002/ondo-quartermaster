@@ -41,12 +41,25 @@ async def gate_and_approve(
         return EffectOutcome(True, False, decision)
     effects = list(decision.effects) + [e for e in (extra_effects or []) if e not in decision.effects]
     req = ApprovalRequest(
-        run_id=ctx.log.run_id, title=title, summary=summary, effects=effects,
-        values=values or [], diff=diff, tool=action.tool, arguments=action.arguments,
+        run_id=ctx.log.run_id,
+        title=title,
+        summary=summary,
+        effects=effects,
+        values=values or [],
+        diff=diff,
+        tool=action.tool,
+        arguments=action.arguments,
     )
     ctx.log.append(APPROVAL_REQUESTED, "gates", req.to_dict())
     res = await ctx.approvals.request(req)
-    ctx.log.append(APPROVAL_RESOLVED, f"user:{res.by}", {
-        "approval_id": req.id, "approved": res.approved, "by": res.by, "note": res.note,
-    })
+    ctx.log.append(
+        APPROVAL_RESOLVED,
+        f"user:{res.by}",
+        {
+            "approval_id": req.id,
+            "approved": res.approved,
+            "by": res.by,
+            "note": res.note,
+        },
+    )
     return EffectOutcome(res.approved, True, decision, res.by, res.note, req.id)

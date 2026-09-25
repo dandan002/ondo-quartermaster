@@ -38,19 +38,33 @@ _INJECTION_RX = [re.compile(p, re.IGNORECASE) for p in _INJECTION]
 # (the verb on the button) and the target. Mentioning a billing system is not
 # submitting to it; clicking its Save button is.
 _FILE_TOOLS = ("edit_workbook", "create_workbook", "create_document", "write_text_file")
-_PASSIVE_TOOLS = ("browser_navigate", "browser_navigate_back", "browser_type", "browser_select_option",
-                  "browser_snapshot", "browser_wait_for", "browser_hover", "browser_tabs")
+_PASSIVE_TOOLS = (
+    "browser_navigate",
+    "browser_navigate_back",
+    "browser_type",
+    "browser_select_option",
+    "browser_snapshot",
+    "browser_wait_for",
+    "browser_hover",
+    "browser_tabs",
+)
 
 _SUBMIT_VERBS = re.compile(
     r"\b(submit|save changes|save record|update record|create|close ticket|post|approve|transfer|add payee|void|"
-    r"issue|book|raise|log call|pay|confirm payment|place order|commit|finali[sz]e|file)\b", re.I)
+    r"issue|book|raise|log call|pay|confirm payment|place order|commit|finali[sz]e|file)\b",
+    re.I,
+)
 _SEND_VERBS = re.compile(r"\b(send|forward|share|upload|publish|reply|post message|invite)\b", re.I)
 _MONEY = re.compile(
     r"\b(pay|payment|payee|transfer|refund|remit|disburse|purchase order|invoice|cheque|check run|journal|"
-    r"book shipment|wire|charge)\b", re.I)
+    r"book shipment|wire|charge)\b",
+    re.I,
+)
 _SAFE_VERBS = re.compile(
     r"\b(next|previous|back|view|download|export|run report|filter|expand|collapse|accept|sign in|log in|"
-    r"save draft|cancel|close dialog|discard|search|open|help)\b", re.I)
+    r"save draft|cancel|close dialog|discard|search|open|help)\b",
+    re.I,
+)
 _SHARED = re.compile(r"(/shares?/|shared|sharepoint|team site|teams?/|/sites/)", re.I)
 
 
@@ -143,6 +157,6 @@ class RulesDecisionModel:
             overlap = len(want & ot) / (len(ot) or 1)
             scores.append(overlap + 1e-6)
         total = sum(scores)
-        dist = {o: s / total for o, s in zip(q.options, scores)}
+        dist = {o: s / total for o, s in zip(q.options, scores, strict=True)}
         best = max(q.options, key=lambda o: dist[o])
         return Answer(q.id, best, dist[best], dist)

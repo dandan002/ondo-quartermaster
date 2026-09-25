@@ -9,13 +9,18 @@ trigger this itself.
 from __future__ import annotations
 
 import asyncio
+import logging
+import threading as _threading
 import time
-from typing import Callable
+from collections.abc import Callable
+
+_log = logging.getLogger("ondo.agent")
 
 
 class EscapeTwice:
-    def __init__(self, on_trigger: Callable[[], None], *, window_s: float = 0.6,
-                 loop: asyncio.AbstractEventLoop | None = None):
+    def __init__(
+        self, on_trigger: Callable[[], None], *, window_s: float = 0.6, loop: asyncio.AbstractEventLoop | None = None
+    ):
         self.on_trigger = on_trigger
         self.window_s = window_s
         self.loop = loop
@@ -38,7 +43,7 @@ class EscapeTwice:
         self._last = now
         return False
 
-    def start(self) -> "EscapeTwice":
+    def start(self) -> EscapeTwice:
         from pynput import keyboard  # needs a display (X11), Accessibility (macOS) or a session (Windows)
 
         def on_press(key):
@@ -71,7 +76,7 @@ def _wake_x11() -> None:
     if not sys.platform.startswith("linux"):
         return
     try:
-        from Xlib import X, XK, display
+        from Xlib import XK, X, display
         from Xlib.ext import xtest
 
         d = display.Display()
@@ -81,15 +86,13 @@ def _wake_x11() -> None:
         d.sync()
         d.close()
     except Exception:
-        pass
+        _log.debug("could not nudge the X11 key listener", exc_info=True)
 
 
 # -- one listener per process -------------------------------------------------------------
 #
 # Escape twice is a property of the machine, not of a run: one global listener,
 # started on first use, and every live run registers to be stopped by it.
-
-import threading as _threading
 
 _lock = _threading.Lock()
 _watcher: EscapeTwice | None = None

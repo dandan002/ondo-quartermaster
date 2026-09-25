@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from conftest import base_config
 
 from ondo_agent import log as L
 from ondo_agent.approvals import AutoApprovals
@@ -27,14 +28,16 @@ from ondo_agent.models.gateway import scripted_client
 from ondo_agent.models.types import ImagePart
 from ondo_agent.runtime import assemble
 
-from conftest import base_config
-
 CHROMIUM = os.environ.get("ONDO_CHROMIUM", "/opt/pw-browsers/chromium")
 
 
 def _available() -> bool:
     cmd = default_command()
-    return Path(CHROMIUM).exists() and (cmd[0] != "npx" or shutil.which("npx") is not None) and shutil.which("node") is not None
+    return (
+        Path(CHROMIUM).exists()
+        and (cmd[0] != "npx" or shutil.which("npx") is not None)
+        and shutil.which("node") is not None
+    )
 
 
 pytestmark = pytest.mark.skipif(not _available(), reason="Playwright MCP or Chromium not available")
@@ -42,13 +45,29 @@ pytestmark = pytest.mark.skipif(not _available(), reason="Playwright MCP or Chro
 
 def browser_config(drive, tmp_path, portal: Portal, **over):
     return base_config(
-        drive, tmp_path,
+        drive,
+        tmp_path,
         grants={"files": {"granted": True, "folders": [str(drive)]}, "input": {"granted": True}},
-        browser={"enabled": True, "allowed_origins": [portal.url], "executable_path": CHROMIUM,
-                 "no_sandbox": True, "headless": True, "output_dir": str(tmp_path / "pw-out")},
-        gates={"thresholds_file": str(Path(__file__).resolve().parents[1] / "config" / "thresholds.json"),
-               "rules": [{"effect": "submits_to_system_of_record", "action": "require", "name": "billing-portal-submit",
-                          "url": portal.url + "/*", "element": r'^button "(Submit|Save)'}]},
+        browser={
+            "enabled": True,
+            "allowed_origins": [portal.url],
+            "executable_path": CHROMIUM,
+            "no_sandbox": True,
+            "headless": True,
+            "output_dir": str(tmp_path / "pw-out"),
+        },
+        gates={
+            "thresholds_file": str(Path(__file__).resolve().parents[1] / "config" / "thresholds.json"),
+            "rules": [
+                {
+                    "effect": "submits_to_system_of_record",
+                    "action": "require",
+                    "name": "billing-portal-submit",
+                    "url": portal.url + "/*",
+                    "element": r'^button "(Submit|Save)',
+                }
+            ],
+        },
         **over,
     )
 
@@ -104,8 +123,11 @@ async def test_document_store_to_web_portal_with_a_text_only_model(drive, tmp_pa
 async def test_refused_submission_leaves_the_portal_untouched(drive, tmp_path):
     with Portal() as portal:
         cfg = browser_config(drive, tmp_path, portal)
-        a = await assemble(cfg, model=scripted_client(renewal_submit_policy(drive, portal.url)),
-                           approvals=AutoApprovals(False, by="mara.okonjo"))
+        a = await assemble(
+            cfg,
+            model=scripted_client(renewal_submit_policy(drive, portal.url)),
+            approvals=AutoApprovals(False, by="mara.okonjo"),
+        )
         try:
             res = await a.harness.run(REQUEST)
         finally:

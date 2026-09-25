@@ -12,11 +12,11 @@ evaluated from recorded runs.
 
 from __future__ import annotations
 
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
-from ..types import Message, ModelError, ModelResponse, ToolCall, Usage
 from ...log import MODEL_RESPONSE, Event
 from ...tools.spec import ToolSpec
+from ..types import Message, ModelError, ModelResponse, ToolCall, Usage
 
 Policy = Callable[[list[Message], list[ToolSpec]], ModelResponse]
 

@@ -12,12 +12,12 @@ import asyncio
 import os
 from typing import Protocol
 
+from ..tools.spec import ToolSpec
 from .adapters.messages import MessagesAdapter
 from .adapters.openai_chat import OpenAIChatAdapter
 from .adapters.scripted import ScriptedModel
 from .profile import ModelProfile
 from .types import ContextLengthError, Message, ModelError, ModelResponse
-from ..tools.spec import ToolSpec
 
 
 class Adapter(Protocol):
@@ -42,7 +42,7 @@ class ModelClient:
         profile: ModelProfile,
         adapter: Adapter | None = None,
         *,
-        fallbacks: list["ModelClient"] | None = None,
+        fallbacks: list[ModelClient] | None = None,
         max_retries: int = 2,
         backoff_s: float = 1.0,
     ):

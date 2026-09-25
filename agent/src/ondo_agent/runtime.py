@@ -7,6 +7,7 @@ control-plane connection and the tests.
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from dataclasses import dataclass, field
@@ -47,7 +48,7 @@ class Config:
     profiles: dict[str, ModelProfile] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: str | Path) -> "Config":
+    def load(cls, path: str | Path) -> Config:
         path = Path(path)
         raw = _expand(yaml.safe_load(path.read_text()) or {})
         cfg = cls(raw, path.parent.resolve())
@@ -59,7 +60,7 @@ class Config:
         return cfg
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any], base_dir: Path | None = None) -> "Config":
+    def from_dict(cls, raw: dict[str, Any], base_dir: Path | None = None) -> Config:
         cfg = cls(_expand(raw), (base_dir or Path.cwd()).resolve())
         for name, body in (raw.get("models", {}).get("profiles") or {}).items():
             cfg.profiles[name] = ModelProfile.from_dict({"name": name, **body})
@@ -172,7 +173,7 @@ class Assembled:
                 if hasattr(r, "__await__"):
                     await r
             except Exception:  # one failing cleanup must not skip the rest
-                pass
+                logging.getLogger("ondo.agent").warning("cleanup failed", exc_info=True)
 
 
 async def assemble(
@@ -188,8 +189,11 @@ async def assemble(
     broker = broker or make_broker(cfg)
     decision = make_decision(cfg)
     screening_cfg = cfg.section("screening")
-    screener = Screener(decision, threshold=float(screening_cfg.get("threshold", 0.5))) \
-        if screening_cfg.get("enabled", True) else None
+    screener = (
+        Screener(decision, threshold=float(screening_cfg.get("threshold", 0.5)))
+        if screening_cfg.get("enabled", True)
+        else None
+    )
     gates = make_gates(cfg, decision)
     model = model or make_model(cfg)
     log = log if log is not None else EventLog.create(cfg.runs_dir)
@@ -212,9 +216,16 @@ async def assemble(
         if d.get("escape_twice", True):
             cleanup.append(_escape_twice(broker))
     harness = Harness(
-        model=model, tools=tools, log=log, broker=broker, gates=gates,
-        approvals=approvals or TerminalApprovals(user), screener=screener,
+        model=model,
+        tools=tools,
+        log=log,
+        broker=broker,
+        gates=gates,
+        approvals=approvals or TerminalApprovals(user),
+        screener=screener,
         budget=Budget(int(b.get("max_steps", 40)), int(b.get("max_tokens", 1_000_000))),
-        config=cfg.raw, user=user, services=services,
+        config=cfg.raw,
+        user=user,
+        services=services,
     )
     return Assembled(harness, broker, log, cleanup)

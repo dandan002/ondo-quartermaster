@@ -7,13 +7,20 @@ pyatspi is synchronous; callers run these methods in a worker thread.
 
 from __future__ import annotations
 
+import logging
 import threading
 
 from .model import Element, StaleElement, Window, number_occurrences
 
+_log = logging.getLogger("ondo.agent")
+
 _STATES = {
-    "STATE_FOCUSED": "focused", "STATE_ENABLED": "enabled", "STATE_EDITABLE": "editable",
-    "STATE_CHECKED": "checked", "STATE_SHOWING": "showing", "STATE_SELECTED": "selected",
+    "STATE_FOCUSED": "focused",
+    "STATE_ENABLED": "enabled",
+    "STATE_EDITABLE": "editable",
+    "STATE_CHECKED": "checked",
+    "STATE_SHOWING": "showing",
+    "STATE_SELECTED": "selected",
 }
 _CLICK_NAMES = ("click", "press", "activate", "toggle", "jump")
 
@@ -43,10 +50,10 @@ class AtspiBackend:
                     try:
                         role = w.getRoleName()
                     except Exception:
+                        _log.debug("AT-SPI window vanished while listing", exc_info=True)
                         continue
                     if role in ("frame", "window", "dialog", "alert"):
-                        out.append(Window(id=f"{_pid(app)}#{i}", title=w.name or "", app=app.name or "",
-                                          pid=_pid(app)))
+                        out.append(Window(id=f"{_pid(app)}#{i}", title=w.name or "", app=app.name or "", pid=_pid(app)))
         return out
 
     def _window_node(self, window: Window):
@@ -74,8 +81,9 @@ class AtspiBackend:
                 try:
                     role = node.getRoleName()
                     name = node.name or ""
-                    states = frozenset(_STATES[k] for k in (_state_key(s) for s in node.getState().getStates())
-                                       if k in _STATES)
+                    states = frozenset(
+                        _STATES[k] for k in (_state_key(s) for s in node.getState().getStates()) if k in _STATES
+                    )
                 except Exception:
                     return
                 actions: tuple[str, ...] = ()
@@ -83,9 +91,9 @@ class AtspiBackend:
                     act = node.queryAction()
                     actions = tuple(act.getName(i) for i in range(act.nActions))
                 except NotImplementedError:
-                    pass
+                    pass  # this element has no actions
                 except Exception:
-                    pass
+                    _log.debug("AT-SPI action query failed for %s", role, exc_info=True)
                 value = _value(node, role)
                 if role not in ("filler", "panel") or name:
                     out.append(Element(role, name, value, states, actions, depth, handle=node))
@@ -143,13 +151,13 @@ def _pid(app) -> int:
         return 0
 
 
-def _value(node, role: str) -> str:  # noqa: ARG001
+def _value(node, role: str) -> str:
     try:
         return node.queryText().getText(0, -1) or ""
     except NotImplementedError:
-        pass
+        pass  # not a text element; try the value interface
     except Exception:
-        pass
+        _log.debug("AT-SPI text read failed for %s", role, exc_info=True)
     try:
         return str(node.queryValue().currentValue)
     except Exception:

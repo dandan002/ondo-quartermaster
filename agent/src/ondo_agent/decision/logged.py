@@ -14,8 +14,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .interface import Answer, DecisionModel, Question, question_dict
 from ..log import DECISION, EventLog
+from .interface import Answer, DecisionModel, Question, question_dict
 
 
 class LoggedDecisionModel:
