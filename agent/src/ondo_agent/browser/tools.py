@@ -83,7 +83,7 @@ async def _gate_submit(ctx: ToolContext, s: BrowserSession, *, tool: str, args: 
     changed = sum(1 for v in values if v.before is not None)
     outcome = await gate_and_approve(
         ctx, action, title=f"{how} {element} on {title}",
-        summary=(f"Submitting {changed} changed field(s) on {title}. Nothing has been saved there yet."
+        summary=(f"Submitting {changed} changed field{'' if changed == 1 else 's'} on {title}. Nothing has been saved there yet."
                  if changed else f"{how} {element} on {title}. Nothing has been sent yet."),
         values=values,
     )
@@ -157,7 +157,7 @@ async def fill_form(args: dict[str, Any], ctx: ToolContext) -> ToolResult:
     r = await s.call("browser_fill_form", {"fields": fields})
     if r.is_error:
         return ToolResult(_action_note(r.text) or r.text[:800], is_error=True)
-    return await _page(ctx, s, f"Filled {len(fields)} field(s). Nothing is submitted until you click the form's button.")
+    return await _page(ctx, s, f"Filled {len(fields)} field{'' if len(fields) == 1 else 's'}. Nothing is submitted until you click the form's button.")
 
 
 async def select_option(args: dict[str, Any], ctx: ToolContext) -> ToolResult:

@@ -94,6 +94,13 @@ class ControlPlaneAgent:
         self.outbox: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self._stopping = False
         self._tasks: set[asyncio.Task] = set()
+        # One browser per agent, so a persistent profile keeps the user signed in
+        # to their portals between runs. Its origin allowlist follows org policy.
+        self.browser = None
+        if cfg.section("browser").get("enabled"):
+            from .browser.session import BrowserSession
+
+            self.browser = BrowserSession.from_config(cfg.section("browser"), cfg)
         # Local config is the starting point until the control plane sends grants.
         b = make_broker(cfg)
         self.state.grants = b.grants
@@ -123,7 +130,10 @@ class ControlPlaneAgent:
         elif t == "grants":
             self._apply_grants(msg)
         elif t == "policy":
-            self.state.policy = Policy.from_dict(msg.get("policy"))
+            policy = msg.get("policy") or {}
+            self.state.policy = Policy.from_dict(policy)
+            if self.browser is not None and policy.get("allowed_origins"):
+                self.browser.origins.allowed = list(policy["allowed_origins"])
         elif t in ("stop_run", "pause_run", "resume_run"):
             b = self.runs.get(msg.get("run_id", ""))
             if b and t == "stop_run":
@@ -165,7 +175,8 @@ class ControlPlaneAgent:
         self.send({"type": "run_status", "run_id": log_.run_id, "status": "running"})
         model = self.model_factory() if self.model_factory else None
         a = await assemble(self.cfg, model=model, approvals=self.approvals, log=log_, broker=broker,
-                           user=msg.get("user", "user"))
+                           user=msg.get("user", "user"),
+                           services={"browser": self.browser} if self.browser is not None else None)
         try:
             res = await a.harness.run(msg["request"])
             self.send({"type": "run_status", "run_id": log_.run_id, "status": res.status, "answer": res.answer,
@@ -174,7 +185,7 @@ class ControlPlaneAgent:
             log.exception("run failed")
             self.send({"type": "run_status", "run_id": log_.run_id, "status": "error", "reason": str(e)})
         finally:
-            await a.aclose()
+            await a.model_close()
             self.runs.pop(log_.run_id, None)
 
     # -- connection loop ----------------------------------------------------------
@@ -213,5 +224,7 @@ class ControlPlaneAgent:
 
     def stop(self) -> None:
         self._stopping = True
+        if self.browser is not None:
+            asyncio.ensure_future(self.browser.aclose())
         for b in self.runs.values():
             b.stop("agent shutting down", by="agent")

@@ -22,13 +22,15 @@ export function approvalView(a: ApprovalRow) {
 export function runRoutes(app: FastifyInstance, { db, hub }: Ctx): void {
   const verified = guard(db);
 
+  // A step is one model turn that acted (the timeline's unit), not one tool call.
   function stepCounts(runId: string) {
-    const steps = all<{ data_json: string }>(db, "SELECT data_json FROM run_events WHERE run_id = ? AND type = 'step'", runId)
-      .map((s) => parse<{ call_id: string; status: string; title: string }>(s.data_json, { call_id: "", status: "", title: "" }));
-    const byCall = new Map<string, { status: string; title: string }>();
-    for (const s of steps) byCall.set(s.call_id, s);
-    const list = [...byCall.values()];
-    return { total: list.length, done: list.filter((s) => s.status !== "running").length, current: list.at(-1)?.title ?? "" };
+    const turns = all<{ data_json: string }>(db, "SELECT data_json FROM run_events WHERE run_id = ? AND type = 'model_response' ORDER BY seq", runId)
+      .filter((e) => parse<{ tool_calls?: unknown[] }>(e.data_json, {}).tool_calls?.length);
+    const steps = all<{ data_json: string }>(db, "SELECT data_json FROM run_events WHERE run_id = ? AND type = 'step' ORDER BY seq", runId)
+      .map((s) => parse<{ status: string; title: string }>(s.data_json, { status: "", title: "" }));
+    const last = steps.at(-1);
+    const running = steps.filter((s) => s.status === "running").length > steps.filter((s) => s.status !== "running").length;
+    return { total: turns.length, done: running ? Math.max(0, turns.length - 1) : turns.length, current: last?.title ?? "" };
   }
 
   function view(r: RunRow) {

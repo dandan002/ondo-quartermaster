@@ -199,8 +199,14 @@ export class Hub {
   }
 }
 
+/** A short name for a run: the first clause of the request, cut before "from…"
+ * or "into…" when it runs long. The full request is always shown beside it. */
 export function titleFor(request: string): string {
   const first = request.replace(/\s+/g, " ").trim().split(/(?<=[.?!])\s/)[0] ?? request;
-  const t = first.replace(/[.?!]$/, "");
-  return t.length > 64 ? t.slice(0, 61).trimEnd() + "…" : t;
+  let t = first.replace(/[.?!]$/, "").split(", ")[0];
+  if (t.length > 48) {
+    const cut = [" from ", " into ", " in the ", " using ", " for the "].map((w) => t.indexOf(w)).filter((i) => i >= 16).sort((a, b) => a - b)[0];
+    if (cut !== undefined) t = t.slice(0, cut);
+  }
+  return t.length > 64 ? t.slice(0, 61).replace(/\s+\S*$/, "") + "…" : t;
 }

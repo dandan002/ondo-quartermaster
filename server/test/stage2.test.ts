@@ -190,6 +190,7 @@ describe("pairing, grants and runs", () => {
 
     const runs = (await mara.req("GET", "/api/runs")).json;
     expect(runs[0].title).toBe("Build the Q3 renewal pack for Northwind");
+    expect(runs[0].steps.total).toBe(0);
     expect(runs[0].status).toBe("waiting");
     const pending = (await mara.req("GET", "/api/approvals?status=pending")).json;
     expect(pending[0].values[0].after).toBe("193725");

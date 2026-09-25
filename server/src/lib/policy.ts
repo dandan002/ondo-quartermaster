@@ -7,6 +7,8 @@ export interface OrgPolicy {
   excluded_windows: string[];
   disabled_grants: string[];
   writes_require_approval: boolean;
+  // The only web origins the agent's browser may open.
+  allowed_origins: string[];
 }
 
 export const DEFAULT_POLICY: OrgPolicy = {
@@ -14,6 +16,7 @@ export const DEFAULT_POLICY: OrgPolicy = {
   excluded_windows: ["Personal mail", "HR portal", "Password manager"],
   disabled_grants: [],
   writes_require_approval: true,
+  allowed_origins: [],
 };
 
 export function normalisePolicy(p: Partial<OrgPolicy> | undefined): OrgPolicy {
@@ -23,6 +26,7 @@ export function normalisePolicy(p: Partial<OrgPolicy> | undefined): OrgPolicy {
     excluded_windows: strs(p?.excluded_windows ?? DEFAULT_POLICY.excluded_windows),
     disabled_grants: strs(p?.disabled_grants).filter((g) => ["files", "screen", "input"].includes(g)),
     writes_require_approval: p?.writes_require_approval !== false,
+    allowed_origins: strs(p?.allowed_origins).filter((o) => /^https?:\/\/[^/]+$/.test(o.replace(/\/$/, ""))).map((o) => o.replace(/\/$/, "")),
   };
 }
 

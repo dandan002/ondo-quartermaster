@@ -172,6 +172,12 @@ CREATE TABLE IF NOT EXISTS scim_tokens (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS pilot_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS runs_user ON runs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS approvals_status ON approvals(status, created_at);
 CREATE INDEX IF NOT EXISTS audit_org ON audit(org_id, id);

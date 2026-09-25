@@ -26,6 +26,10 @@ from .spec import ToolContext, ToolResult, ToolSpec, obj
 READABLE = {".xlsx", ".xlsm", ".docx", ".pptx", ".pdf", ".csv", ".tsv", ".txt", ".md", ".json"}
 
 
+def _n(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
 def _access(ctx: ToolContext, path: str, op: str, **extra: Any) -> None:
     ctx.log.append(FILE_ACCESS, "tool:files", {"path": path, "op": op, **extra})
 
@@ -177,7 +181,7 @@ async def edit_workbook(args: dict[str, Any], ctx: ToolContext) -> ToolResult:
     if not real:
         return ToolResult(f"No change: every cell in {path.name} already has those values.")
     diff = "\n".join(f"{c['sheet']}!{c['cell']}: {c['before'] or '(empty)'} -> {c['after']}" for c in real)
-    summary = f"Change {len(real)} cell(s) in {path.name}." + (f" {args['reason']}" if args.get("reason") else "")
+    summary = f"Change {_n(len(real), 'cell')} in {path.name}." + (f" {args['reason']}" if args.get("reason") else "")
     values = [ApprovalValue(f"{c['sheet']}!{c['cell']}", c["after"], c["before"]) for c in real[:12]]
     ok, msg = await _approve_write(ctx, tool="edit_workbook", args=args, path=path, summary=summary, diff=diff,
                                    values=values, changes=real)
@@ -185,7 +189,7 @@ async def edit_workbook(args: dict[str, Any], ctx: ToolContext) -> ToolResult:
         return ToolResult(msg, detail={"summary": "Write not approved", "path": str(path)})
     formats.apply_workbook_edits(path, edits)
     _access(ctx, os.path.realpath(path), "edited", cells=len(real))
-    return ToolResult(f"Saved {len(real)} change(s) to {path.name}:\n{diff}",
+    return ToolResult(f"Saved {_n(len(real), 'change')} to {path.name}:\n{diff}",
                       detail={"summary": f"Edited {len(real)} cells in {path.name}", "path": str(path),
                               "values": [{"label": v.label, "before": v.before, "after": v.after} for v in values]})
 
@@ -199,7 +203,7 @@ async def create_workbook(args: dict[str, Any], ctx: ToolContext) -> ToolResult:
     if path.exists():
         diff = f"Replaces the existing {path.name} entirely.\n" + diff
     n = sum(len(s.get("rows", [])) for s in sheets)
-    summary = f"Write {path.name} with {len(sheets)} sheet(s), {n} rows."
+    summary = f"Write {path.name} with {_n(len(sheets), 'sheet')}, {_n(n, 'row')}."
     ok, msg = await _approve_write(ctx, tool="create_workbook", args=args, path=path, summary=summary, diff=diff,
                                    values=[ApprovalValue("Rows", str(n)), ApprovalValue("Sheets", ", ".join(s["name"] for s in sheets))])
     if not ok:
@@ -218,7 +222,7 @@ async def create_document(args: dict[str, Any], ctx: ToolContext) -> ToolResult:
     diff = f"# {args.get('title', '')}\n" + "\n".join(paras)
     if table:
         diff += "\n\nTable:\n" + formats.rows_preview(table)
-    summary = f"Write {path.name}: {len(paras)} paragraph(s)" + (f" and a {len(table)}-row table." if table else ".")
+    summary = f"Write {path.name}: {_n(len(paras), 'paragraph')}" + (f" and a {len(table)}-row table." if table else ".")
     ok, msg = await _approve_write(ctx, tool="create_document", args=args, path=path, summary=summary, diff=diff,
                                    values=[ApprovalValue("Title", args.get("title", ""))])
     if not ok:
@@ -299,7 +303,7 @@ def file_tools() -> list[ToolSpec]:
                  "reason": {"type": "string", "description": "One sentence the approver will read: why these changes."}},
                 ["path", "edits"]),
             edit_workbook, grant="files", max_effect="write_shared", parallel_safe=False,
-            title=lambda a: f"Edited {len(a['edits'])} cells in {Path(a['path']).name}",
+            title=lambda a: f"Edited {_n(len(a['edits']), 'cell')} in {Path(a['path']).name}",
         ),
         ToolSpec(
             "create_workbook",

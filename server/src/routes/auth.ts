@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Ctx } from "../app.js";
-import { all, one } from "../db.js";
+import { all, now, one, run } from "../db.js";
 import { audit } from "../lib/audit.js";
 import { type UserRow, getAuthed, guard, sendCode, signIn, signOut, verifyCode } from "../lib/auth.js";
 import { verifyPassword } from "../lib/crypto.js";
@@ -10,6 +10,13 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
 export function authRoutes(app: FastifyInstance, { db, cfg, hub }: Ctx): void {
   const findUser = (email: string) => one<UserRow>(db, "SELECT * FROM users WHERE email = ? AND active = 1", email.trim());
+
+  app.post<{ Body: { email?: string } }>("/api/pilot", async (req, reply) => {
+    const email = String(req.body?.email ?? "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return reply.code(400).send({ error: "Enter a work email address." });
+    run(db, "INSERT INTO pilot_requests (email, created_at) VALUES (?, ?)", email, now());
+    return { received: true };
+  });
 
   app.get("/api/auth/options", async () => ({ sso: ssoMode(cfg), sso_label: ssoLabel(cfg), password: true }));
 

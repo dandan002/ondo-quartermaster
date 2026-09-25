@@ -142,6 +142,10 @@ class Assembled:
     log: EventLog
     cleanup: list[Any]
 
+    async def model_close(self) -> None:
+        """Close what this run owns, leaving shared services (the browser) running."""
+        await self.cleanup[0]()
+
     async def aclose(self) -> None:
         for c in self.cleanup:
             r = c()

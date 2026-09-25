@@ -23,7 +23,7 @@ KINDS = {
 
 def kind_of(path: Path) -> str:
     k = KINDS.get(path.suffix.lower())
-    if k == "PDF" and any(w in path.stem.lower() for w in ("msa", "contract", "agreement", "sow")):
+    if k in ("PDF", "Document") and any(w in path.stem.lower() for w in ("msa", "contract", "agreement", "sow")):
         return "Contract"
     return k or "File"
 
