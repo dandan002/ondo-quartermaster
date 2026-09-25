@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ondo Quartermaster — landing page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
+<style>
+body { margin: 0; background: #ffffff; color: #252a31; font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+a { color: #2d72d2; text-decoration: none; }
+a:hover { color: #215db0; }
+button { font: inherit; }
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 2700px; display: flex; flex-direction: column; background: #ffffff">
+
+  <header style="height: 72px; flex-shrink: 0; padding: 0 64px; display: flex; align-items: center; gap: 40px; border-bottom: 1px solid #e5e8eb">
+    <a href="#top" style="display: flex; align-items: center; gap: 10px; color: #1c2127">
+      <span style="width: 26px; height: 26px; border-radius: 4px; background: #252a31; color: #f6f7f9; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">Q</span>
+      <span style="font-size: 16px; font-weight: 600; letter-spacing: -0.01em">Ondo Quartermaster</span>
+    </a>
+    <nav style="flex-grow: 1; display: flex; align-items: center; gap: 28px">
+      <a href="#capabilities" style="font-size: 15px; color: #404854">Capabilities</a>
+      <a href="#how" style="font-size: 15px; color: #404854">How it works</a>
+      <a href="#control" style="font-size: 15px; color: #404854">Control and audit</a>
+      <a href="#deployment" style="font-size: 15px; color: #404854">Deployment</a>
+    </nav>
+    <a href="SignIn.dc.html" style="height: 40px; padding: 0 16px; border: 1px solid #c5cbd3; border-radius: 3px; display: flex; align-items: center; font-size: 16px; color: #404854">Sign in</a>
+    <a href="#pilot" style="height: 40px; padding: 0 16px; background: #2d72d2; border-radius: 3px; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #ffffff">
+      Book a pilot
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+    </a>
+  </header>
+
+  <section id="top" style="flex-shrink: 0; padding: 72px 64px 64px; display: flex; gap: 56px; align-items: flex-start">
+    <div style="width: 616px; flex-shrink: 0; display: flex; flex-direction: column; gap: 24px">
+      <span style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: #215db0">FOR ENTERPRISE OPERATIONS TEAMS</span>
+      <h1 style="margin: 0; font-size: 44px; line-height: 1.12; font-weight: 400; letter-spacing: -0.01em; color: #1c2127">A quartermaster for the work that lives on the desktop</h1>
+      <p style="margin: 0; font-size: 18px; line-height: 1.55; color: #404854">Ondo reads the files your team already works in, watches the screen when you ask it to, and takes the keyboard to finish the steps. Renewal packs, reconciliations, month-end reporting — done on the machine where the work is, not in another tab.</p>
+      <div style="display: flex; align-items: center; gap: 12px; padding-top: 4px">
+        <a href="#pilot" style="height: 44px; padding: 0 20px; background: #2d72d2; border-radius: 3px; display: flex; align-items: center; font-size: 16px; font-weight: 600; color: #ffffff">Book a pilot</a>
+        <a href="#how" style="height: 44px; padding: 0 20px; border: 1px solid #c5cbd3; border-radius: 3px; display: flex; align-items: center; font-size: 16px; color: #404854">See a run, step by step</a>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.4; color: #5f6b7c">Runs on managed Windows and macOS. Nothing leaves the device until a policy says it may.</p>
+    </div>
+
+    <div style="width: 544px; flex-shrink: 0; background: #252a31; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: #abb3bf">RUNNING NOW</span>
+        <span style="flex-grow: 1"></span>
+        <span style="font-size: 13px; color: #abb3bf; font-variant-numeric: tabular-nums">step 3 of 5</span>
+      </div>
+      <h2 style="margin: 0; font-size: 22px; line-height: 1.3; font-weight: 600; color: #f6f7f9">Renewal pack — Northwind, Q3</h2>
+
+      <div style="background: #2f343c; border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: flex-start; gap: 10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8abbff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px" aria-hidden="true"><path d="M5 13l4 4 10-10"></path></svg>
+          <span style="font-size: 15px; line-height: 1.5; color: #f6f7f9">Pulled 12 contract files from SharePoint</span>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8abbff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px" aria-hidden="true"><path d="M5 13l4 4 10-10"></path></svg>
+          <span style="font-size: 15px; line-height: 1.5; color: #f6f7f9">Read renewal dates and uplift terms into the workbook</span>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px">
+          <span style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 3px; border: 1.6px solid #8abbff; border-radius: 50%; display: block"></span>
+          <span style="font-size: 15px; line-height: 1.5; color: #f6f7f9">Keying the six changed lines into the billing system</span>
+        </div>
+        <div style="height: 4px; background: #404854; border-radius: 2px; overflow: hidden">
+          <div style="width: 62%; height: 4px; background: #8abbff; border-radius: 2px"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #404854; border-radius: 4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#abb3bf" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.5"></rect><path d="M9 20h6"></path></svg>
+          <span style="flex-grow: 1; font-size: 13px; color: #abb3bf">Seeing</span>
+          <span style="font-size: 13px; color: #f6f7f9">Excel — Q3_Renewals.xlsx</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #404854; border-radius: 4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#abb3bf" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0" aria-hidden="true"><path d="M12 4v10"></path><path d="M7 9l5-5 5 5"></path><path d="M5 20h14"></path></svg>
+          <span style="flex-grow: 1; font-size: 13px; color: #abb3bf">Waiting on</span>
+          <span style="font-size: 13px; color: #f6f7f9">Your approval before it submits</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="capabilities" style="flex-shrink: 0; padding: 0 64px 64px">
+    <div style="border: 1px solid #dce0e5; border-radius: 4px; display: flex; align-items: stretch">
+      <div style="flex-grow: 1; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d72d2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z"></path><path d="M14 3v4.5h4.5"></path></svg>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1c2127">Reads your files</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">Workbooks, decks, contracts and scanned PDFs, from the local disk and the shared drives your team already uses.</p>
+      </div>
+      <div style="width: 1px; background: #e5e8eb; flex-shrink: 0"></div>
+      <div style="flex-grow: 1; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d72d2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.5"></rect><path d="M9 20h6"></path><path d="M12 17v3"></path></svg>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1c2127">Watches the screen</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">Share a window and it follows along, answers about what is on it, and offers the next step in your own process.</p>
+      </div>
+      <div style="width: 1px; background: #e5e8eb; flex-shrink: 0"></div>
+      <div style="flex-grow: 1; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d72d2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="1.5"></rect><path d="M6.5 10h1"></path><path d="M10.5 10h1"></path><path d="M14.5 10h1"></path><path d="M8 14h8"></path></svg>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1c2127">Takes the keyboard</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">Types and clicks through the systems with no API — the terminal emulator, the portal, the twenty-year-old ERP screen.</p>
+      </div>
+      <div style="width: 1px; background: #e5e8eb; flex-shrink: 0"></div>
+      <div style="flex-grow: 1; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d72d2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3.5 9h17"></path><path d="M3.5 15h17"></path><path d="M12 3c2.5 2.5 2.5 15 0 18"></path><path d="M12 3c-2.5 2.5-2.5 15 0 18"></path></svg>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1c2127">Connects your apps</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">Mail, calendar, document stores, ticketing and finance systems, through the connectors your IT team switches on.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" style="flex-shrink: 0; padding: 0 64px 72px; display: flex; flex-direction: column; gap: 32px">
+    <div style="display: flex; flex-direction: column; gap: 10px; max-width: 700px">
+      <h2 style="margin: 0; font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: #1c2127">Ask once, in the words you already use</h2>
+      <p style="margin: 0; font-size: 18px; line-height: 1.55; color: #404854">A quartermaster does not need a workflow diagram. It needs the request, the files, and permission to act.</p>
+    </div>
+
+    <div style="display: flex; gap: 20px">
+      <div style="flex-grow: 1; border: 1px solid #dce0e5; border-radius: 4px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="width: 28px; height: 28px; border-radius: 4px; background: #e8f0fb; color: #184a90; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">1</span>
+        <h3 style="margin: 0; font-size: 20px; line-height: 1.3; font-weight: 600; color: #1c2127">Say what you need</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">“Build the Q3 renewal pack for Northwind from the contracts in the client folder, and flag anything that uplifts above five per cent.”</p>
+      </div>
+      <div style="flex-grow: 1; border: 1px solid #dce0e5; border-radius: 4px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="width: 28px; height: 28px; border-radius: 4px; background: #e8f0fb; color: #184a90; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">2</span>
+        <h3 style="margin: 0; font-size: 20px; line-height: 1.3; font-weight: 600; color: #1c2127">Watch it work</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">Every file it opens and every key it presses appears as a step you can read, pause or take over. The cursor is shared, not stolen.</p>
+      </div>
+      <div style="flex-grow: 1; border: 1px solid #dce0e5; border-radius: 4px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="width: 28px; height: 28px; border-radius: 4px; background: #e8f0fb; color: #184a90; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">3</span>
+        <h3 style="margin: 0; font-size: 20px; line-height: 1.3; font-weight: 600; color: #1c2127">Approve the ending</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">Anything that sends, submits or overwrites stops for a person. You see the exact values before they land.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="control" style="flex-shrink: 0; background: #252a31; padding: 64px; display: flex; gap: 56px; align-items: flex-start">
+    <div style="width: 560px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px">
+      <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: #abb3bf">CONTROL AND AUDIT</span>
+      <h2 style="margin: 0; font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: #f6f7f9">An assistant with this much reach has to be reviewable</h2>
+      <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #abb3bf">Screen access, file access and keyboard control are three separate grants, scoped per person and per application, revocable from the admin console while a run is in progress.</p>
+      <a href="#deployment" style="align-self: flex-start; height: 44px; padding: 0 20px; border: 1px solid #404854; border-radius: 3px; display: flex; align-items: center; color: #f6f7f9; font-size: 16px">Read the security overview</a>
+    </div>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px">
+      <div style="background: #2f343c; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f6f7f9">A written record of every action</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #abb3bf">Files read, fields typed, screens captured, connectors called — with the person who asked and the person who approved.</p>
+      </div>
+      <div style="background: #2f343c; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f6f7f9">Approval gates you define</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #abb3bf">Set the actions that always need a second pair of eyes: outbound mail, payments, anything touching a system of record.</p>
+      </div>
+      <div style="background: #2f343c; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f6f7f9">Screen capture with blind spots</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #abb3bf">Name the windows Ondo may never see. Personal mail, HR systems and password managers stay dark, and the log says so.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="deployment" style="flex-shrink: 0; padding: 64px; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 10px; max-width: 700px">
+      <h2 style="margin: 0; font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: #1c2127">Deployment, on your terms</h2>
+      <p style="margin: 0; font-size: 18px; line-height: 1.55; color: #404854">Your platform team owns the agent, the identity and the boundary. Fill in the bracketed lines with your own commitments before this page goes out.</p>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid #dce0e5; border-radius: 4px; overflow: hidden">
+      <thead>
+        <tr style="background: #f6f7f9">
+          <th style="text-align: left; padding: 12px 20px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: #5f6b7c; width: 220px">AREA</th>
+          <th style="text-align: left; padding: 12px 20px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: #5f6b7c">WHAT YOU GET</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top: 1px solid #e5e8eb">
+          <td style="padding: 16px 20px; font-size: 16px; font-weight: 600; color: #1c2127">Where it runs</td>
+          <td style="padding: 16px 20px; font-size: 16px; line-height: 1.5; color: #252a31">A signed desktop agent pushed through Intune or Jamf. Model calls go to [YOUR REGION] or to a deployment in your own tenancy.</td>
+        </tr>
+        <tr style="border-top: 1px solid #e5e8eb">
+          <td style="padding: 16px 20px; font-size: 16px; font-weight: 600; color: #1c2127">Identity</td>
+          <td style="padding: 16px 20px; font-size: 16px; line-height: 1.5; color: #252a31">SAML and OIDC single sign-on, SCIM provisioning, device trust, and roles that mirror your existing operations groups.</td>
+        </tr>
+        <tr style="border-top: 1px solid #e5e8eb">
+          <td style="padding: 16px 20px; font-size: 16px; font-weight: 600; color: #1c2127">Data handling</td>
+          <td style="padding: 16px 20px; font-size: 16px; line-height: 1.5; color: #252a31">File contents and screen frames are processed for the run and retained for [YOUR RETENTION WINDOW]. Training on customer data is off.</td>
+        </tr>
+        <tr style="border-top: 1px solid #e5e8eb">
+          <td style="padding: 16px 20px; font-size: 16px; font-weight: 600; color: #1c2127">Assurance</td>
+          <td style="padding: 16px 20px; font-size: 16px; line-height: 1.5; color: #252a31">[YOUR CERTIFICATIONS], annual penetration test summary, and audit logs streamed to your SIEM.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="pilot" style="flex-shrink: 0; margin: 0 64px 56px; border: 1px solid #dce0e5; border-radius: 12px; padding: 40px; display: flex; align-items: center; gap: 40px">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: #1c2127">Start with one process, on ten desks</h2>
+      <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #404854">A pilot takes a single recurring task, runs it under supervision for a fortnight, and reports what it did, what it asked for, and what it got wrong.</p>
+    </div>
+    <form style="width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <label for="work-email" style="font-size: 14px; font-weight: 600; color: #404854">Work email</label>
+        <input id="work-email" type="email" placeholder="you@company.com" style="height: 44px; padding: 0 16px; font-size: 16px; color: #252a31; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px">
+      </div>
+      <button type="button" style="height: 44px; padding: 0 20px; background: #2d72d2; color: #ffffff; font-size: 16px; font-weight: 600; border: none; border-radius: 3px; cursor: pointer">Request a pilot</button>
+      <p style="margin: 0; font-size: 13px; line-height: 1.4; color: #5f6b7c">We reply with a scoping call, not a demo reel.</p>
+    </form>
+  </section>
+
+  <footer style="margin-top: auto; flex-shrink: 0; background: #252a31; padding: 32px 64px; display: flex; align-items: center; gap: 32px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="width: 24px; height: 24px; border-radius: 4px; background: #2f343c; color: #f6f7f9; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">Q</span>
+      <span style="font-size: 15px; font-weight: 600; color: #f6f7f9">Ondo Quartermaster</span>
+    </div>
+    <span style="flex-grow: 1"></span>
+    <a href="#control" style="font-size: 15px; color: #abb3bf">Security</a>
+    <a href="#deployment" style="font-size: 15px; color: #abb3bf">Deployment</a>
+    <a href="SignIn.dc.html" style="font-size: 15px; color: #abb3bf">Sign in</a>
+    <span style="font-size: 13px; color: #abb3bf">© [YEAR] [YOUR COMPANY]</span>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

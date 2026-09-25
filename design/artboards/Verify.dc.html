@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Verify this device</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
+<style>
+body { margin: 0; background: #ffffff; color: #252a31; font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+a { color: #2d72d2; text-decoration: none; }
+a:hover { color: #215db0; }
+button { font: inherit; }
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 860px; display: flex; background: #ffffff">
+
+  <aside style="width: 460px; flex-shrink: 0; background: #252a31; padding: 48px 40px; display: flex; flex-direction: column; gap: 32px">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px">
+      <span style="width: 26px; height: 26px; border-radius: 4px; background: #2f343c; color: #f6f7f9; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">Q</span>
+      <span style="font-size: 16px; font-weight: 600; color: #f6f7f9; letter-spacing: -0.01em">Ondo Quartermaster</span>
+    </a>
+
+    <ol style="margin: 24px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px">
+      <li style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 4px">
+        <span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 4px; background: #8abbff; display: flex; align-items: center; justify-content: center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#252a31" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"></path></svg>
+        </span>
+        <span style="font-size: 16px; color: #abb3bf">Sign in</span>
+      </li>
+      <li style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #383e47; border-radius: 4px">
+        <span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 4px; background: #2f343c; color: #f6f7f9; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">2</span>
+        <span style="font-size: 16px; font-weight: 600; color: #f6f7f9">Verify this device</span>
+      </li>
+      <li style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 4px">
+        <span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 4px; border: 1px solid #404854; color: #abb3bf; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">3</span>
+        <span style="font-size: 16px; color: #abb3bf">Pair the desktop agent</span>
+      </li>
+    </ol>
+
+    <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid #404854; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: #abb3bf">THIS DEVICE</span>
+      <span style="font-size: 15px; color: #f6f7f9">NW-LT-4471 · Windows 11 · Managed</span>
+      <span style="font-size: 13px; color: #abb3bf">Enrolled in [YOUR MDM]. Not recognised for this account yet.</span>
+    </div>
+  </aside>
+
+  <main style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 48px">
+    <div style="width: 400px; display: flex; flex-direction: column; gap: 28px">
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <h1 style="margin: 0; font-size: 40px; line-height: 1.15; font-weight: 400; letter-spacing: -0.01em; color: #1c2127">Verify this device</h1>
+        <p style="margin: 0; font-size: 18px; line-height: 1.55; color: #404854">We sent a six-digit code to <strong style="font-weight: 600; color: #252a31">mara.okonjo@northwind-ops.com</strong>. It expires in ten minutes.</p>
+      </div>
+
+      <form style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label for="code-1" style="font-size: 14px; font-weight: 600; color: #404854">Verification code</label>
+          <div style="display: flex; gap: 8px">
+            <input id="code-1" type="text" inputmode="numeric" maxlength="1" value="4" aria-label="Digit 1" style="width: 56px; height: 56px; text-align: center; font-size: 22px; font-weight: 600; color: #1c2127; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px; font-variant-numeric: tabular-nums">
+            <input id="code-2" type="text" inputmode="numeric" maxlength="1" value="8" aria-label="Digit 2" style="width: 56px; height: 56px; text-align: center; font-size: 22px; font-weight: 600; color: #1c2127; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px; font-variant-numeric: tabular-nums">
+            <input id="code-3" type="text" inputmode="numeric" maxlength="1" value="1" aria-label="Digit 3" style="width: 56px; height: 56px; text-align: center; font-size: 22px; font-weight: 600; color: #1c2127; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px; font-variant-numeric: tabular-nums">
+            <input id="code-4" type="text" inputmode="numeric" maxlength="1" value="7" aria-label="Digit 4" style="width: 56px; height: 56px; text-align: center; font-size: 22px; font-weight: 600; color: #1c2127; background: #ffffff; border: 1px solid #2d72d2; border-radius: 3px; box-shadow: 0 0 0 3px rgba(45,114,210,.25); font-variant-numeric: tabular-nums">
+            <input id="code-5" type="text" inputmode="numeric" maxlength="1" value="" aria-label="Digit 5" style="width: 56px; height: 56px; text-align: center; font-size: 22px; font-weight: 600; color: #1c2127; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px; font-variant-numeric: tabular-nums">
+            <input id="code-6" type="text" inputmode="numeric" maxlength="1" value="" aria-label="Digit 6" style="width: 56px; height: 56px; text-align: center; font-size: 22px; font-weight: 600; color: #1c2127; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px; font-variant-numeric: tabular-nums">
+          </div>
+        </div>
+
+        <label for="trust" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid #dce0e5; border-radius: 3px; cursor: pointer">
+          <input id="trust" type="checkbox" checked style="width: 16px; height: 16px; margin: 3px 0 0; accent-color: #2d72d2">
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 15px; font-weight: 600; color: #1c2127">Trust this device for 30 days</span>
+            <span style="font-size: 13px; line-height: 1.4; color: #5f6b7c">Your administrator can end trusted sessions at any time.</span>
+          </span>
+        </label>
+
+        <a href="PairAgent.dc.html" style="height: 44px; background: #2d72d2; border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 600; color: #ffffff">
+          Verify and continue
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+        </a>
+      </form>
+
+      <div style="display: flex; align-items: center; gap: 16px">
+        <a href="#resend" style="font-size: 15px">Send a new code</a>
+        <span style="width: 1px; height: 14px; background: #e5e8eb"></span>
+        <a href="SignIn.dc.html" style="font-size: 15px; color: #404854">Use a different account</a>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; background: #fcf0f0; border-radius: 3px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ac2f33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #252a31">That code has expired. Send a new one and enter it within ten minutes.</p>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Signing in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
+<style>
+body { margin: 0; background: #252a31; color: #f6f7f9; font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+a { color: #8abbff; text-decoration: none; }
+a:hover { color: #f6f7f9; }
+
+@keyframes qm-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes qm-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+@keyframes qm-mark { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+.qm-rise { opacity: 0; animation: qm-rise 0.45s ease-out forwards; }
+.qm-d1 { animation-delay: 0.10s; }
+.qm-d2 { animation-delay: 0.45s; }
+.qm-d3 { animation-delay: 0.90s; }
+.qm-d4 { animation-delay: 1.35s; }
+.qm-sweep { animation: qm-sweep 1.6s cubic-bezier(.4,0,.2,1) infinite; }
+.qm-mark { animation: qm-mark 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qm-rise, .qm-sweep, .qm-mark { animation: none; opacity: 1; transform: none; }
+}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 860px; background: #252a31; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; position: relative">
+
+  <div class="qm-rise qm-d1" style="display: flex; flex-direction: column; align-items: center; gap: 20px">
+    <span class="qm-mark" style="width: 44px; height: 44px; border-radius: 4px; background: #2f343c; color: #f6f7f9; font-size: 20px; font-weight: 600; display: flex; align-items: center; justify-content: center">Q</span>
+    <span style="font-size: 22px; font-weight: 400; color: #f6f7f9">Signing you in</span>
+  </div>
+
+  <div style="width: 280px; height: 2px; background: #404854; border-radius: 2px; overflow: hidden">
+    <div class="qm-sweep" style="width: 25%; height: 2px; background: #8abbff; border-radius: 2px"></div>
+  </div>
+
+  <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; width: 320px">
+    <li class="qm-rise qm-d2" style="display: flex; align-items: center; gap: 10px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8abbff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0" aria-hidden="true"><path d="M5 13l4 4 10-10"></path></svg>
+      <span style="font-size: 15px; color: #abb3bf">Identity confirmed with [YOUR IDENTITY PROVIDER]</span>
+    </li>
+    <li class="qm-rise qm-d3" style="display: flex; align-items: center; gap: 10px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8abbff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0" aria-hidden="true"><path d="M5 13l4 4 10-10"></path></svg>
+      <span style="font-size: 15px; color: #abb3bf">Device NW-LT-4471 trusted</span>
+    </li>
+    <li class="qm-rise qm-d4" style="display: flex; align-items: center; gap: 10px">
+      <span style="width: 15px; height: 15px; flex-shrink: 0; border: 1.6px solid #abb3bf; border-radius: 50%; display: block"></span>
+      <span style="font-size: 15px; color: #abb3bf">Waking the desktop agent</span>
+    </li>
+  </ol>
+
+  <div class="qm-rise qm-d4" style="position: absolute; bottom: 40px; display: flex; align-items: center; gap: 16px">
+    <span style="font-size: 15px; color: #abb3bf">Taking longer than usual?</span>
+    <a href="Workspace.dc.html" style="font-size: 15px; color: #8abbff">Continue without the agent</a>
+    <span style="width: 1px; height: 14px; background: #404854"></span>
+    <a href="SignIn.dc.html" style="font-size: 15px; color: #abb3bf">Cancel</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

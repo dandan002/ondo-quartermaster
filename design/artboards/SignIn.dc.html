@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign in to Ondo Quartermaster</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
+<style>
+body { margin: 0; background: #ffffff; color: #252a31; font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+a { color: #2d72d2; text-decoration: none; }
+a:hover { color: #215db0; }
+button { font: inherit; }
+
+@keyframes qm-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.qm-rise { opacity: 0; animation: qm-rise 0.25s ease-out forwards; }
+.qm-d1 { animation-delay: 0.06s; }
+.qm-d2 { animation-delay: 0.12s; }
+.qm-d3 { animation-delay: 0.18s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qm-rise { animation: none; opacity: 1; transform: none; }
+}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 860px; display: flex; background: #ffffff">
+
+  <aside style="width: 460px; flex-shrink: 0; background: #252a31; padding: 48px 40px; display: flex; flex-direction: column; gap: 32px">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px">
+      <span style="width: 26px; height: 26px; border-radius: 4px; background: #2f343c; color: #f6f7f9; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">Q</span>
+      <span style="font-size: 16px; font-weight: 600; color: #f6f7f9; letter-spacing: -0.01em">Ondo Quartermaster</span>
+    </a>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 16px">
+      <p style="margin: 0; font-size: 22px; line-height: 1.4; font-weight: 400; color: #f6f7f9">“It opens the folder, reads the twelve contracts, and hands me the pack to check. That used to be my Thursday.”</p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #abb3bf">[NAME], [ROLE] — [CUSTOMER]</p>
+    </div>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 24px; border-top: 1px solid #404854">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8abbff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>
+        <span style="font-size: 14px; color: #abb3bf">Single sign-on with device trust required by your administrator</span>
+      </div>
+    </div>
+  </aside>
+
+  <main style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 48px">
+    <div style="width: 400px; display: flex; flex-direction: column; gap: 28px">
+
+      <div class="qm-rise" style="display: flex; flex-direction: column; gap: 10px">
+        <h1 style="margin: 0; font-size: 40px; line-height: 1.15; font-weight: 400; letter-spacing: -0.01em; color: #1c2127">Sign in</h1>
+        <p style="margin: 0; font-size: 18px; line-height: 1.55; color: #404854">Use your company account. Your access, files and connectors follow it.</p>
+      </div>
+
+      <a href="Verify.dc.html" class="qm-rise qm-d1" style="height: 44px; width: 100%; padding: 0 16px; background: #2d72d2; color: #ffffff; font-size: 16px; font-weight: 600; border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 8px">
+        Continue with [YOUR IDENTITY PROVIDER]
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+      </a>
+
+      <div class="qm-rise qm-d2" style="display: flex; align-items: center; gap: 12px">
+        <span style="flex-grow: 1; height: 1px; background: #e5e8eb"></span>
+        <span style="font-size: 13px; color: #5f6b7c">or sign in with email</span>
+        <span style="flex-grow: 1; height: 1px; background: #e5e8eb"></span>
+      </div>
+
+      <form class="qm-rise qm-d3" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <label for="email" style="font-size: 14px; font-weight: 600; color: #404854">Work email</label>
+          <input id="email" type="email" value="mara.okonjo@northwind-ops.com" style="height: 44px; padding: 0 16px; font-size: 16px; color: #252a31; background: #ffffff; border: 1px solid #2d72d2; border-radius: 3px; box-shadow: 0 0 0 3px rgba(45,114,210,.25)">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; align-items: baseline; gap: 12px">
+            <label for="password" style="font-size: 14px; font-weight: 600; color: #404854">Password</label>
+            <span style="flex-grow: 1"></span>
+            <a href="#reset" style="font-size: 14px">Forgot password</a>
+          </div>
+          <input id="password" type="password" value="passwordvalue" style="height: 44px; padding: 0 16px; font-size: 16px; color: #252a31; background: #ffffff; border: 1px solid #c5cbd3; border-radius: 3px">
+        </div>
+
+        <a href="Verify.dc.html" style="height: 44px; border: 1px solid #c5cbd3; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: #404854">Continue</a>
+      </form>
+
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #404854">No account yet? Your administrator adds you from the admin console. <a href="#help">Ask for access</a>.</p>
+
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; background: #f6f7f9; border-radius: 4px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5f6b7c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="1.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #252a31">Signing in here does not grant screen or keyboard access. The desktop agent asks for those separately, on the device.</p>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
