@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.ondo/
+*.sqlite
+*.sqlite-journal
+.env

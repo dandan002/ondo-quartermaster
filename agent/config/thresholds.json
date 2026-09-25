@@ -1,0 +1,309 @@
+{
+  "gates": {
+    "submits_to_system_of_record": {
+      "positives": 19,
+      "chosen": {
+        "threshold": 0.11,
+        "tp": 19,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "curve": [
+        {
+          "threshold": 0.05,
+          "tp": 19,
+          "fp": 22,
+          "fn": 0,
+          "precision": 0.4634,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.1,
+          "tp": 19,
+          "fp": 8,
+          "fn": 0,
+          "precision": 0.7037,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.2,
+          "tp": 19,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.3,
+          "tp": 19,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.5,
+          "tp": 19,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.7,
+          "tp": 18,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.9474
+        },
+        {
+          "threshold": 0.9,
+          "tp": 18,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.9474
+        }
+      ]
+    },
+    "sends_externally": {
+      "positives": 6,
+      "chosen": {
+        "threshold": 0.06,
+        "tp": 6,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "curve": [
+        {
+          "threshold": 0.05,
+          "tp": 6,
+          "fp": 30,
+          "fn": 0,
+          "precision": 0.1667,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.1,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.2,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.3,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.5,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.7,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.9,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      ]
+    },
+    "overwrites_shared_file": {
+      "positives": 5,
+      "chosen": {
+        "threshold": 0.31,
+        "tp": 5,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "curve": [
+        {
+          "threshold": 0.05,
+          "tp": 5,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0.5556,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.1,
+          "tp": 5,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.8333,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.2,
+          "tp": 5,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.8333,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.3,
+          "tp": 5,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.8333,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.5,
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.7,
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.9,
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      ]
+    },
+    "moves_money": {
+      "positives": 11,
+      "chosen": {
+        "threshold": 0.07,
+        "tp": 11,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.8462,
+        "recall": 1.0
+      },
+      "curve": [
+        {
+          "threshold": 0.05,
+          "tp": 11,
+          "fp": 34,
+          "fn": 0,
+          "precision": 0.2444,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.1,
+          "tp": 11,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.8462,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.2,
+          "tp": 11,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.8462,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.3,
+          "tp": 11,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.8462,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.5,
+          "tp": 11,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.8462,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.7,
+          "tp": 11,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.8462,
+          "recall": 1.0
+        },
+        {
+          "threshold": 0.9,
+          "tp": 0,
+          "fp": 0,
+          "fn": 11,
+          "precision": 1.0,
+          "recall": 0.0
+        }
+      ]
+    }
+  },
+  "thresholds": {
+    "submits_to_system_of_record": 0.11,
+    "sends_externally": 0.06,
+    "overwrites_shared_file": 0.31,
+    "moves_money": 0.07
+  },
+  "screening": {
+    "at_0.5": {
+      "threshold": 0.5,
+      "tp": 6,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "misses": [],
+    "false_alarms": []
+  },
+  "element_choice": {
+    "accuracy": 0.75,
+    "n": 4
+  },
+  "note": "Thresholds are only as good as these labels. Re-measure on a held-out sample before trusting a model tuned on the same fixtures, and treat any threshold change as a release.",
+  "model": "rules-baseline",
+  "fixtures": 50,
+  "fixtures_sha256": "92f3b2dfab2530d4",
+  "target_recall": 0.95,
+  "measured_at": "2026-09-25T14:25:00",
+  "latency_ms_p50": 0.05
+}
