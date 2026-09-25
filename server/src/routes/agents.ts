@@ -56,7 +56,7 @@ export function agentRoutes(app: FastifyInstance, { db, hub }: Ctx): void {
     const a = req.authed!;
     const ag = one<{ id: string; hostname: string; os: string }>(db,
       "SELECT id, hostname, os FROM agents WHERE user_id = ? AND revoked = 0 ORDER BY created_at DESC LIMIT 1", a.user.id);
-    return ag ? { paired: true, agent: { ...ag, connected: hub.isConnected(ag.id), grants: hub.grantsFor(ag.id) } } : { paired: false };
+    return ag ? { paired: true, agent: { ...ag, connected: hub.isConnected(ag.id), grants: hub.grantsFor(ag.id), capabilities: hub.capabilitiesFor(ag.id) } } : { paired: false };
   });
 
   app.put<{ Params: { id: string; kind: string }; Body: { granted?: boolean; scope?: string[] } }>(

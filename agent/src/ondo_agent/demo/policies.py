@@ -196,7 +196,9 @@ def demo_router(cfg, profile):
         if "p" not in chosen:
             request = next((m.text for m in messages if m.role == "user" and not m.text.startswith("<environment>")), "")
             r = request.lower()
-            if any(w in r for w in ("portal", "billing system", "key the", "submit")):
+            if any(w in r for w in ("billing app", "desktop app", "legacy")):
+                chosen["p"] = legacy_app_policy(drive, profile.extra.get("legacy_window", "Legacy billing"))
+            elif any(w in r for w in ("portal", "billing system", "key the", "submit")):
                 chosen["p"] = renewal_submit_policy(drive, portal)
             elif "row 14" in r or "why" in r:
                 chosen["p"] = _spreadsheet_question(drive)
@@ -226,5 +228,38 @@ def _spreadsheet_question(drive: Path):
                        f"({c['file']}, clause 7.2) says {c['uplift']:g}%. The workbook figure looks like it was "
                        f"carried over from last year's pack.\n\nI can correct row 14 and re-run the pack totals. Shall I?")
         return say(f"Row 14 is {name}, and it matches the contract.")
+
+    return policy
+
+
+def legacy_app_policy(drive: Path, window: str = "Legacy billing", *, between=None):
+    """"Update Halleck Logistics' annual value in the legacy billing app from the signed
+    contract." Reads the contract, then drives the app by naming controls in words.
+    It never inspects the window to pick a target: the decision layer does that.
+    ``between`` runs after typing and before submitting (the tests move the window)."""
+    contract = drive / "Contracts" / "Halleck_MSA_2026.pdf"
+
+    def policy(messages: list[Message], tools) -> ModelResponse:
+        t = _turns(messages)
+        results = _tool_results(messages)
+        last = results[-1][1] if results else ""
+        if t == 0:
+            return call(("read_file", {"path": str(contract)}))
+        c = next(iter(parse_contracts(results).values()), None)
+        if t == 1:
+            if not c:
+                return say("I could not read the new annual value from the contract.")
+            return call(("desktop_act", {"window": window, "target": "Annual value field", "action": "set_text",
+                                         "text": str(c["new"])}))
+        if t == 2:
+            if between:
+                between()
+            return call(("desktop_act", {"window": window, "target": "the Submit button", "action": "click"}))
+        if t == 3:
+            if "not approved" in last:
+                return say("The change was not approved, so nothing was submitted in the billing app.")
+            return call(("desktop_inspect", {"window": window}))
+        m = re.search(r'label "Status" \[ref=\w+\]: "([^"]*)"', last)
+        return say(f"The billing app says: {m.group(1)}." if m else "I could not read the app's status.")
 
     return policy

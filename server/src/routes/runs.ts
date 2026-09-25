@@ -77,7 +77,7 @@ export function runRoutes(app: FastifyInstance, { db, hub }: Ctx): void {
       "SELECT seq, type, source, data_json, ts, hash FROM run_events WHERE run_id = ? AND seq > ? ORDER BY seq", r.id, after)
       .map((e) => ({ seq: e.seq, type: e.type, source: e.source, ts: e.ts, hash: e.hash, data: parse(e.data_json, {}) }));
     const approvals = all<ApprovalRow>(db, "SELECT * FROM approvals WHERE run_id = ? ORDER BY created_at", r.id).map(approvalView);
-    return { run: view(r), events, approvals, grants: hub.grantsFor(r.agent_id) };
+    return { run: view(r), events, approvals, grants: hub.grantsFor(r.agent_id), capabilities: hub.capabilitiesFor(r.agent_id) };
   });
 
   app.post<{ Params: { id: string }; Body: { reason?: string } }>("/api/runs/:id/stop", { preHandler: verified }, async (req, reply) => {

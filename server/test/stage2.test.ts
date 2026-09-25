@@ -72,7 +72,7 @@ class FakeAgent {
     a.ws = new WebSocket(`${base.replace("http", "ws")}/agent/ws`, { headers: { authorization: `Bearer ${token}` } });
     a.ws.on("message", (m) => a.inbox.push(JSON.parse(String(m))));
     await new Promise((res, rej) => { a.ws.once("open", res); a.ws.once("error", rej); });
-    a.send({ type: "hello", device: { hostname: "NW-LT-4471", os: "Windows 11" } });
+    a.send({ type: "hello", device: { hostname: "NW-LT-4471", os: "Windows 11" }, capabilities: { screen: true, input: true, desktop: true } });
     await a.next((m) => m.type === "grants");
     return a;
   }
@@ -166,6 +166,7 @@ describe("pairing, grants and runs", () => {
     // Three separate grants. Nothing is granted by pairing.
     const status = (await mara.req("GET", "/api/pairing/status")).json;
     expect(status.agent.connected).toBe(true);
+    expect(status.agent.capabilities).toMatchObject({ screen: true, desktop: true });
     expect(Object.values(status.agent.grants).every((g: any) => !g.granted)).toBe(true);
 
     // Policy exclusions are not grantable, whoever asks.
@@ -184,7 +185,8 @@ describe("pairing, grants and runs", () => {
     expect(start.run_id).toBe(run_id);
     agent.event(run_id, 0, "run_started", { request: start.request, profile: "gateway", model: "orchestrator" });
     agent.event(run_id, 1, "file_access", { path: "/Users/mara/Northwind client drive/Q3_Renewals.xlsx", op: "read", kind: "Workbook" });
-    agent.event(run_id, 2, "approval_requested", { id: "apr_1", title: "Submit six lines", summary: "Nothing has been saved there yet.",
+    agent.event(run_id, 2, "window_access", { window: "Legacy billing", op: "acted", action: "set_text", element: 'text "Annual value"' });
+    agent.event(run_id, 3, "approval_requested", { id: "apr_1", title: "Submit six lines", summary: "Nothing has been saved there yet.",
       effects: ["submits_to_system_of_record"], values: [{ label: "Annual value — Halleck Logistics", before: "184500", after: "193725" }] });
     await new Promise((r) => setTimeout(r, 100));
 
@@ -213,11 +215,11 @@ describe("pairing, grants and runs", () => {
     // Admins revoke; they cannot grant on someone else's device.
     expect((await admin.req("PUT", `/api/agents/${agent.id}/grants/input`, { granted: true })).status).toBe(403);
 
-    agent.event(run_id, 3, "run_stopped", { reason: "The input grant was revoked by an administrator.", status: "stopped" });
+    agent.event(run_id, 4, "run_stopped", { reason: "The input grant was revoked by an administrator.", status: "stopped" });
     await new Promise((r) => setTimeout(r, 100));
     const detail = (await mara.req("GET", `/api/runs/${run_id}`)).json;
     expect(detail.run.status).toBe("stopped");
-    expect(detail.events.map((e: any) => e.type)).toEqual(["run_started", "file_access", "approval_requested", "run_stopped"]);
+    expect(detail.events.map((e: any) => e.type)).toEqual(["run_started", "file_access", "window_access", "approval_requested", "run_stopped"]);
 
     // Everything above is in the audit log, hash-chained, with who did it.
     const audit = (await admin.req("GET", "/api/admin/audit?limit=500")).json as any[];
@@ -226,6 +228,7 @@ describe("pairing, grants and runs", () => {
     expect(actions).toContain("user:mara.okonjo@northwind-ops.com approval.approved");
     expect(actions).toContain("user:it.admin@northwind-ops.com grant.revoked");
     expect(actions.some((a) => a.endsWith("agent.file.read"))).toBe(true);
+    expect(actions.some((a) => a.endsWith("agent.window.acted"))).toBe(true);
     expect((await admin.req("GET", "/api/admin/audit/verify")).json.ok).toBe(true);
     agent.ws.close();
   });

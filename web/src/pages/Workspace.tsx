@@ -200,7 +200,7 @@ function AssistantPanel() {
       <div style={{ flexGrow: 1, padding: 20, display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}>
         <div className="context-chip">
           <span className={`dot ${agent?.connected ? "dot-accent qm-pulse" : "dot-ring-light"}`} />
-          <span className="grow">{!agent ? "No desktop agent paired" : agent.connected ? `${agent.grants.files.scope.length} granted folder${agent.grants.files.scope.length === 1 ? "" : "s"} · not watching the screen` : "Desktop agent offline"}</span>
+          <span className="grow">{!agent ? "No desktop agent paired" : agent.connected ? `${agent.grants.files.scope.length} granted folder${agent.grants.files.scope.length === 1 ? "" : "s"} · ${agent.grants.screen.granted && agent.capabilities?.screen ? `${agent.grants.screen.scope.length || "all"} shared window${agent.grants.screen.scope.length === 1 ? "" : "s"}` : "no windows shared"}` : "Desktop agent offline"}</span>
           <Link to="/pair" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent-hover)" }}>Change</Link>
         </div>
         {asked.length === 0 && (

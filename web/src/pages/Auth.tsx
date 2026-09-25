@@ -242,6 +242,8 @@ export function PairAgent() {
   const [error, setError] = useState("");
   const [folder, setFolder] = useState("");
   const [editing, setEditing] = useState(false);
+  const [win, setWin] = useState("");
+  const [editingWin, setEditingWin] = useState(false);
   const agent = me?.agents[0] ?? null;
 
   useEffect(() => {
@@ -268,6 +270,8 @@ export function PairAgent() {
   const osName = agent?.os.toLowerCase().includes("darwin") || agent?.os.toLowerCase().includes("mac") ? "Mac" : agent?.os.toLowerCase().includes("windows") ? "PC" : "computer";
   const excluded = me?.org.policy.excluded_windows ?? [];
   const folders = agent?.grants.files.scope ?? [];
+  const windows = agent?.grants.screen.scope ?? [];
+  const reads = !!agent?.capabilities?.screen;
   const serverUrl = window.location.origin;
 
   return (
@@ -321,13 +325,26 @@ export function PairAgent() {
               </GrantRow>
               <div className="divider" />
               <GrantRow icon="monitor" title="See the screen while you work" granted={agent.grants.screen.granted}
-                onGrant={() => setGrant("screen", true)} onRevoke={() => setGrant("screen", false)}>
-                <p className="ui secondary">Ondo reads the window you share so it can answer about what is on it. This agent version does not watch the screen yet; the grant is recorded for when it can.</p>
+                onGrant={() => (windows.length || win ? setGrant("screen", true, win ? [...windows, win] : windows) : setEditingWin(true))}
+                onRevoke={() => setGrant("screen", false)}>
+                <p className="ui secondary">{reads
+                  ? "Ondo reads the windows you name through their accessibility tree: the controls, their labels and their values. It takes no screenshots, and nothing else on your desktop is read."
+                  : "This agent does not read windows yet. The grant is recorded for when it can."}</p>
+                {windows.length > 0 && <p className="ui secondary">Currently: {joinList(windows)}.</p>}
+                {editingWin ? (
+                  <form className="row" onSubmit={(e) => { e.preventDefault(); if (win) { void setGrant("screen", true, [...windows, win]); setWin(""); setEditingWin(false); } }}>
+                    <label htmlFor="window" className="sr-only">Window title or app name</label>
+                    <input id="window" className="input grow" placeholder="Window title or app, e.g. Legacy billing" value={win} onChange={(e) => setWin(e.target.value)} />
+                    <button className="btn btn-sm">Add</button>
+                  </form>
+                ) : <button className="link-btn" style={{ alignSelf: "flex-start" }} onClick={() => setEditingWin(true)}>Choose which windows</button>}
               </GrantRow>
               <div className="divider" />
               <GrantRow icon="keyboard" title="Type and click for you" granted={agent.grants.input.granted}
                 onGrant={() => setGrant("input", true)} onRevoke={() => setGrant("input", false)}>
-                <p className="ui secondary">Only inside a task you started, and never through an approval gate. Today that means the web portals your administrator allows. Stop any task from the task page.</p>
+                <p className="ui secondary">Only inside a task you started, and never through an approval gate. {reads
+                  ? "Ondo acts on controls by name in the windows you share and in the web portals your administrator allows. Press Escape twice to take the keyboard back."
+                  : "Today that means the web portals your administrator allows. Stop any task from the task page."}</p>
               </GrantRow>
             </div>
             {error && <div className="callout callout-danger" role="alert" style={{ maxWidth: 820 }}><Icon name="close" size={16} color="var(--danger)" style={{ marginTop: 3 }} /><p>{error}</p></div>}

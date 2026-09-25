@@ -132,7 +132,30 @@ def make_tools(cfg: Config) -> list[ToolSpec]:
         from .browser.tools import browser_tools
 
         tools += browser_tools()
+    if cfg.section("desktop").get("enabled"):
+        from .desktop.tools import desktop_tools
+
+        tools += desktop_tools()
     return tools
+
+
+def _escape_twice(broker: PermissionBroker):
+    """Start the Escape-twice listener for this run. If it cannot start, input
+    control is not safe to hand over, so the input grant is revoked instead."""
+    import logging
+
+    from .desktop import hotkey
+
+    def trigger() -> None:
+        broker.release_input()
+        broker.stop("Escape pressed twice", by="user")
+
+    try:
+        return hotkey.register(trigger)
+    except Exception as e:
+        logging.getLogger("ondo.agent").warning("Escape-twice unavailable (%s); input control is off", e)
+        broker.revoke("input", by="agent", reason="escape_twice_unavailable")
+        return lambda: None
 
 
 @dataclass
@@ -142,15 +165,14 @@ class Assembled:
     log: EventLog
     cleanup: list[Any]
 
-    async def model_close(self) -> None:
-        """Close what this run owns, leaving shared services (the browser) running."""
-        await self.cleanup[0]()
-
     async def aclose(self) -> None:
         for c in self.cleanup:
-            r = c()
-            if hasattr(r, "__await__"):
-                await r
+            try:
+                r = c()
+                if hasattr(r, "__await__"):
+                    await r
+            except Exception:  # one failing cleanup must not skip the rest
+                pass
 
 
 async def assemble(
@@ -181,6 +203,14 @@ async def assemble(
         session = BrowserSession.from_config(cfg.section("browser"), cfg)
         services["browser"] = session
         cleanup.append(session.aclose)
+    d = cfg.section("desktop")
+    if d.get("enabled"):
+        if "desktop" not in services:
+            from .desktop.session import DesktopSession
+
+            services["desktop"] = DesktopSession.from_config(d)
+        if d.get("escape_twice", True):
+            cleanup.append(_escape_twice(broker))
     harness = Harness(
         model=model, tools=tools, log=log, broker=broker, gates=gates,
         approvals=approvals or TerminalApprovals(user), screener=screener,

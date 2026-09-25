@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS agents (
   hostname TEXT NOT NULL DEFAULT '',
   os TEXT NOT NULL DEFAULT '',
   revoked INTEGER NOT NULL DEFAULT 0,
+  capabilities_json TEXT NOT NULL DEFAULT '{}',
   created_at INTEGER NOT NULL,
   last_seen INTEGER NOT NULL DEFAULT 0
 );
@@ -186,6 +187,9 @@ CREATE INDEX IF NOT EXISTS audit_org ON audit(org_id, id);
 export function openDb(path: string): DB {
   const db = new DatabaseSync(path);
   db.exec(SCHEMA);
+  // Columns added after a database was first created.
+  const cols = (db.prepare("PRAGMA table_info(agents)").all() as { name: string }[]).map((c) => c.name);
+  if (!cols.includes("capabilities_json")) db.exec("ALTER TABLE agents ADD COLUMN capabilities_json TEXT NOT NULL DEFAULT '{}'");
   return db;
 }
 

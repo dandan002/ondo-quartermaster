@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ApiError, EFFECT_LABELS, api, hhmm, isActive, useData, type Approval, type Grants, type Run, type RunEvent } from "../api";
+import { ApiError, EFFECT_LABELS, api, hhmm, isActive, useData, type Approval, type Capabilities, type Grants, type Run, type RunEvent } from "../api";
 import { BackHome, Crumbs, RailFoot, RailHead, TaskList, useShell } from "../components/Shell";
 import { Icon } from "../icons";
 
-interface Detail { run: Run; events: RunEvent[]; approvals: Approval[]; grants: Grants }
+interface Detail { run: Run; events: RunEvent[]; approvals: Approval[]; grants: Grants; capabilities?: Capabilities }
 
 interface Item {
   key: string; title: string; ts: number; status: "done" | "now" | "error" | "next";
@@ -38,6 +38,7 @@ export function buildTimeline(events: RunEvent[]): Item[] {
       const s = turn.steps.get(id);
       if (s?.tool === "browser_fill_form") for (const f of a.fields ?? []) typed.push({ label: f.name, value: String(f.value) });
       if (s?.tool === "browser_type") typed.push({ label: a.element ?? "Field", value: String(a.text) });
+      if (s?.tool === "desktop_act" && a.action === "set_text") typed.push({ label: `${a.target} in ${a.window}`, value: String(a.text) });
     }
     const diff = steps.map((s) => diffs.get(s.detail?.path ?? "")).find(Boolean);
     items.push({
@@ -102,8 +103,8 @@ export function TaskRun() {
             {grants.files.granted && grants.files.scope.map((f) => (
               <div key={f} className="row" style={{ gap: 8 }}><Icon name="folder" size={15} color="var(--rail-accent)" /><span className="grow" style={{ fontSize: 14 }}>{base(f)}</span></div>
             ))}
-            <div className="row" style={{ gap: 8 }}><Icon name="monitor" size={15} color="var(--rail-accent)" /><span className="grow" style={{ fontSize: 14 }}>Screen: not watched</span></div>
-            {grants.input.granted && <div className="row" style={{ gap: 8 }}><Icon name="keyboard" size={15} color="var(--rail-accent)" /><span className="grow" style={{ fontSize: 14 }}>Web portals, through the browser</span></div>}
+            <div className="row" style={{ gap: 8 }}><Icon name="monitor" size={15} color="var(--rail-accent)" /><span className="grow" style={{ fontSize: 14 }}>{grants.screen.granted && data.capabilities?.screen ? `Screen: ${grants.screen.scope.join(", ") || "shared windows"}` : "Screen: not shared"}</span></div>
+            {grants.input.granted && <div className="row" style={{ gap: 8 }}><Icon name="keyboard" size={15} color="var(--rail-accent)" /><span className="grow" style={{ fontSize: 14 }}>{data.capabilities?.desktop ? "Keyboard and pointer" : "Web portals, through the browser"}</span></div>}
             {!grants.files.granted && !grants.input.granted && <span className="caption rail-muted">No grants are active on this agent.</span>}
           </div>
         </div>
@@ -238,7 +239,7 @@ function Step({ item, last }: { item: Item; last: boolean }) {
         )}
         {item.typed && (
           <div className="card" style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-            <span className="eyebrow-sm">Typed into the page</span>
+            <span className="eyebrow-sm">Typed</span>
             {item.typed.slice(0, 3).map((t) => <span key={t.label} className="ui tabular">{t.label} · {Number.isFinite(Number(t.value)) ? Number(t.value).toLocaleString("en-GB") : t.value}</span>)}
             {item.typed.length > 3 && <span className="caption">and {item.typed.length - 3} more line{item.typed.length - 3 === 1 ? "" : "s"}</span>}
           </div>

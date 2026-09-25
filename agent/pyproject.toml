@@ -16,6 +16,16 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+# Semantic desktop control. On Linux, pyatspi and PyGObject come from the system
+# (apt install python3-pyatspi gir1.2-atspi-2.0); create the venv with
+# --system-site-packages so the agent can import them.
+desktop = [
+  "pynput>=1.7",
+  "pywinauto>=0.6.8; sys_platform == 'win32'",
+  "psutil>=5.9; sys_platform == 'win32'",
+  "pyobjc-framework-ApplicationServices>=10; sys_platform == 'darwin'",
+  "pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'",
+]
 
 [project.scripts]
 ondo-agent = "ondo_agent.cli:main"
@@ -30,3 +40,4 @@ where = ["src"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+filterwarnings = ["ignore:Atspi.Action.get_action_name is deprecated:DeprecationWarning"]

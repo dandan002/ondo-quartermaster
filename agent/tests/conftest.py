@@ -59,6 +59,21 @@ def spreadsheet_question_policy(drive: Path):
     return policy
 
 
+@pytest.fixture(scope="session")
+def desktop():
+    """One virtual desktop per test session: pyatspi binds to the first session bus
+    a process sees, so every desktop test must share it."""
+    from desktop_env import available, virtual_desktop
+
+    if not available():
+        pytest.skip("needs Xvfb, D-Bus, AT-SPI and xdotool (Linux)")
+    from ondo_agent.desktop import hotkey
+
+    with virtual_desktop() as d:
+        yield d
+        hotkey.shutdown()
+
+
 @pytest.fixture
 def approve_all() -> AutoApprovals:
     return AutoApprovals(True, by="tester")
