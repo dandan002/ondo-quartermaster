@@ -1,4 +1,5 @@
-# Every change needs a review from an owner (enforced by the branch ruleset).
+# Owners are requested for review automatically. Owner approval is not required
+# yet (one maintainer); see docs/ci-cd.md for when to turn it on.
 *                       @dandan002
 
 # The parts that decide what the agent may do deserve a named reviewer even when

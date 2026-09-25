@@ -71,9 +71,11 @@ In **Settings**:
 
 1. **Rules → Rulesets → New branch ruleset**, target `main`, enforcement *Active*:
    - Restrict deletions; block force pushes.
-   - Require a pull request before merging: 1 approval, dismiss stale approvals
-     on new commits, require review from Code Owners, require conversation
-     resolution.
+   - Require a pull request before merging, with **0 required approvals** and
+     *Require review from Code Owners* **off** (with one maintainer, either
+     would block every merge). Keep *Require conversation resolution* on.
+     Raise approvals to 1 and turn Code Owner review on when a second
+     maintainer joins.
    - Require status checks to pass, with *Require branches to be up to date*:
      `Lint and typecheck`, `Agent tests`, `Control plane and web tests`,
      `Container image builds`, `Secret scan`, `Dependency review`,
@@ -90,6 +92,5 @@ In **Settings**:
    security updates, Secret scanning and **Push protection** (which blocks a
    secret before it reaches GitHub at all).
 
-With the one-person CODEOWNERS file as it stands, a solo maintainer cannot
-approve their own PR. Either add a second owner, or leave the approval count at
-0 and rely on the required checks until a second maintainer joins.
+Until then the gate is the required checks, not a second person: nothing
+merges to `main` without a pull request that passes all of them.
