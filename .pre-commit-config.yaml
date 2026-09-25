@@ -1,0 +1,43 @@
+# Local checks before a commit leaves your machine. Install once:
+#   pip install pre-commit && pre-commit install && pre-commit install --hook-type pre-push
+# CI runs the same checks, so skipping these only delays the failure.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: end-of-file-fixer
+        exclude: ^design/
+      - id: trailing-whitespace
+        exclude: ^design/
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.9
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^agent/
+      - id: ruff-format
+        files: ^agent/
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.3
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: TypeScript typecheck (server and web)
+        entry: npm run typecheck
+        language: system
+        pass_filenames: false
+        files: ^(server|web)/.*\.(ts|tsx)$
+        stages: [pre-push]

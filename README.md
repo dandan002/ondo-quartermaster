@@ -124,6 +124,15 @@ dependencies are missing. CI (`.github/workflows/ci.yml`) runs everything, inclu
 model wire formats, and fails if the committed gate thresholds no longer match
 their measurement.
 
+## CI/CD
+
+Every pull request runs lint and typecheck, the full test suite, a container
+build, a secret scan, dependency review and audit, and CodeQL. Pushing a `v*`
+tag re-runs all of it, then publishes the control-plane image to GHCR and the
+agent to a GitHub release, both with signed provenance. Pre-commit hooks run the
+same checks locally. See [`docs/ci-cd.md`](docs/ci-cd.md), including the branch
+rules an admin needs to switch on to enforce them.
+
 ## Stages and their "done when"
 
 | Stage | Done when (from the plan) | Where it is shown |

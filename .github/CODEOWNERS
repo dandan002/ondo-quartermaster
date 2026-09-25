@@ -1,0 +1,13 @@
+# Every change needs a review from an owner (enforced by the branch ruleset).
+*                       @dandan002
+
+# The parts that decide what the agent may do deserve a named reviewer even when
+# the team grows: permissions, gates, screening, the decision layer, and CI itself.
+/agent/src/ondo_agent/permissions.py  @dandan002
+/agent/src/ondo_agent/gates.py        @dandan002
+/agent/src/ondo_agent/screening.py    @dandan002
+/agent/src/ondo_agent/decision/       @dandan002
+/agent/config/thresholds.json         @dandan002
+/server/src/lib/auth.ts               @dandan002
+/server/src/lib/policy.ts             @dandan002
+/.github/                             @dandan002
