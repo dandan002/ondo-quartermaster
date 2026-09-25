@@ -27,6 +27,7 @@ const AUDITED: Record<string, string> = {
   approval_resolved: "agent.approval.resolved",
   permission_denied: "agent.permission.denied",
   grant_changed: "agent.grant.changed",
+  window_access: "agent.window",
 };
 
 export class Hub {
@@ -81,6 +82,11 @@ export class Hub {
     return out;
   }
 
+  capabilitiesFor(agentId: string): Record<string, unknown> {
+    const r = one<{ capabilities_json: string }>(this.db, "SELECT capabilities_json FROM agents WHERE id = ?", agentId);
+    return parse(r?.capabilities_json, {});
+  }
+
   pushGrants(agentId: string, by: string, reason = ""): void {
     const grants = this.grantsFor(agentId);
     this.send(agentId, { type: "grants", by, reason, grants });
@@ -122,7 +128,9 @@ export class Hub {
     run(this.db, "UPDATE agents SET last_seen = ? WHERE id = ?", now(), agent.id);
     if (msg.type === "hello") {
       const d = msg.device ?? {};
-      run(this.db, "UPDATE agents SET hostname = ?, os = ? WHERE id = ?", String(d.hostname ?? ""), String(d.os ?? ""), agent.id);
+      run(this.db, "UPDATE agents SET hostname = ?, os = ?, capabilities_json = ? WHERE id = ?",
+        String(d.hostname ?? ""), String(d.os ?? ""), JSON.stringify(msg.capabilities ?? {}), agent.id);
+      this.publish(orgId, agent.user_id, "agent", { agent_id: agent.id, connected: true });
       return;
     }
     if (msg.type === "event") return this.ingest(agent, orgId, msg.event);
@@ -181,7 +189,8 @@ export class Hub {
         : e.type === "run_started" ? { request: d.request, model: d.model, profile: d.profile }
         : d;
       const actor = e.type === "approval_resolved" ? `user:${d.by}` : `agent:${agent.id}`;
-      audit(this.db, orgId, actor, e.type === "file_access" ? `agent.file.${d.op}` : action, e.run_id, { seq: e.seq, source: e.source, ...detail });
+      const name = e.type === "file_access" ? `agent.file.${d.op}` : e.type === "window_access" ? `agent.window.${d.op}` : action;
+      audit(this.db, orgId, actor, name, e.run_id, { seq: e.seq, source: e.source, ...detail });
     }
     this.publish(orgId, r.user_id, "run_event", { run_id: e.run_id, seq: e.seq, type: e.type, source: e.source, data: d, ts: e.ts });
   }

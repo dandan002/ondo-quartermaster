@@ -103,7 +103,9 @@ export function Files() {
             </div>
             <div className="card card-pad" style={{ padding: 16, gap: 8 }}>
               <span className="eyebrow-sm">Screen access</span>
-              <p className="ui">Ondo is not watching the screen. This agent version works through files and web pages only, so nothing on your desktop is captured.</p>
+              <p className="ui">{data.grants?.screen.granted && me.agents[0]?.capabilities?.screen
+                ? `Ondo can read ${data.grants.screen.scope.length ? data.grants.screen.scope.join(", ") : "the windows you share"} through their accessibility tree, only inside a task you started. It takes no screenshots, and nothing else on your desktop is read.`
+                : "Ondo is not reading any window. Nothing on your desktop is captured."}</p>
               <Link to="/pair" style={{ fontSize: 15 }}>Change what it can do</Link>
             </div>
           </aside>

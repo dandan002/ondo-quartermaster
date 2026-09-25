@@ -130,7 +130,7 @@ export function authRoutes(app: FastifyInstance, { db, cfg, hub }: Ctx): void {
     const device = a.session.device_id ? one(db, "SELECT id, name, os, managed, trusted_until FROM devices WHERE id = ?", a.session.device_id) : null;
     const agents = all<{ id: string; hostname: string; os: string; created_at: number; last_seen: number }>(db,
       "SELECT id, hostname, os, created_at, last_seen FROM agents WHERE user_id = ? AND revoked = 0 ORDER BY created_at DESC", a.user.id)
-      .map((ag) => ({ ...ag, connected: hub.isConnected(ag.id), grants: hub.grantsFor(ag.id) }));
+      .map((ag) => ({ ...ag, connected: hub.isConnected(ag.id), grants: hub.grantsFor(ag.id), capabilities: hub.capabilitiesFor(ag.id) }));
     return {
       user: { id: a.user.id, email: a.user.email, name: a.user.name, title: a.user.title, role: a.user.role },
       org: { id: org.id, name: org.name, policy: JSON.parse(org.policy_json || "{}") },

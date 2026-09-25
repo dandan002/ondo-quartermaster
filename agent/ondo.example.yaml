@@ -36,6 +36,8 @@ screening:
 gates:
   thresholds_file: config/thresholds.json
   rules:
+    - {effect: submits_to_system_of_record, action: require, name: legacy-billing-submit,
+       app: "Legacy billing", element: '^push button "Submit"'}
     - {effect: submits_to_system_of_record, action: require, name: billing-portal-submit,
        url: "http://127.0.0.1:8765/*", element: '^button "(Submit|Save)'}
     - {effect: overwrites_shared_file, action: require, name: shared-drives, path: "**/shares/**"}
@@ -48,6 +50,14 @@ browser:
   profile_dir: .ondo/browser-profile
   executable_path: ${ONDO_CHROMIUM:-}
   no_sandbox: false
+
+desktop:
+  enabled: false            # semantic desktop control (Stage 4): needs the screen and input grants
+  backend: auto             # atspi (Linux) | uia (Windows) | ax (macOS)
+  escape_twice: true        # if the key listener cannot start, input control is switched off
+  element_pick_threshold: 0.35
+  profiles:                 # per-app names for controls the app leaves unnamed
+    "Legacy billing": {"push button#1": "Refresh"}
 
 budget:
   max_steps: 40

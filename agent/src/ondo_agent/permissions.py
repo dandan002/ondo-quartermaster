@@ -232,6 +232,9 @@ class PermissionBroker:
         # "**/HR/**" excludes the HR folder itself, not only what is inside it.
         return any(rx.match(s) or rx.match(s + "/") for rx in self._excluded)
 
+    def window_excluded(self, name: str) -> bool:
+        return self._window_excluded(name)
+
     def _window_excluded(self, name: str) -> bool:
         n = name.lower()
         return any(x.lower() in n for x in self.policy.excluded_windows)

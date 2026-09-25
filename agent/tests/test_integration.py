@@ -11,6 +11,7 @@ checks the run stops on the agent and is recorded as stopped by the control plan
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import shutil
@@ -153,3 +154,48 @@ async def _pending(c: httpx.AsyncClient):
 async def _status(c: httpx.AsyncClient, run_id: str, status: str):
     d = (await c.get(f"/api/runs/{run_id}")).json()
     return d if d["run"]["status"] == status else None
+
+
+async def test_desktop_run_through_the_control_plane(server, desktop, drive, tmp_path):
+    """Stage 4 through the whole stack: capabilities reported, windows granted by
+    name, the submit approved from the web, window actions in the audit log."""
+    from ondo_agent.demo.policies import legacy_app_policy
+
+    saved = tmp_path / "saved.json"
+    app = desktop.launch("Legacy billing", out=saved)
+    async with httpx.AsyncClient(base_url=server) as mara:
+        await _sign_in(mara, "mara.okonjo@northwind-ops.com")
+        code = (await mara.post("/api/pairing", json={})).json()["code"]
+        creds = await pair(server, code, tmp_path / "agent.json")
+        cfg = base_config(drive, tmp_path, grants={}, desktop={"enabled": True, "escape_twice": True})
+        agent = ControlPlaneAgent(cfg, creds, model_factory=lambda: scripted_client(legacy_app_policy(drive), name="scripted"))
+        conn = asyncio.create_task(agent.run_forever())
+        try:
+            await _wait(lambda: _connected(mara))
+            caps = (await mara.get("/api/pairing/status")).json()["agent"]["capabilities"]
+            assert caps["screen"] and caps["desktop"] and not caps["pixels"]
+            # Policy-excluded windows cannot be granted, whoever asks.
+            r = await mara.put(f"/api/agents/{creds.agent_id}/grants/screen", json={"granted": True, "scope": ["Password manager"]})
+            assert r.status_code == 403
+            for kind, scope in (("files", [str(drive)]), ("screen", ["Legacy billing"]), ("input", [])):
+                assert (await mara.put(f"/api/agents/{creds.agent_id}/grants/{kind}", json={"granted": True, "scope": scope})).status_code == 200
+            await _wait(lambda: _async(agent.state.grants["input"].granted))
+
+            run_id = (await mara.post("/api/runs", json={"request": "Update Halleck in the legacy billing app."})).json()["run_id"]
+            pending = await _wait(lambda: _pending(mara))
+            assert pending[0]["effects"] == ["submits_to_system_of_record"]
+            assert pending[0]["values"][0]["before"] == "184500" and pending[0]["values"][0]["after"] == "193725"
+            assert (await mara.post(f"/api/approvals/{pending[0]['id']}", json={"approved": True})).status_code == 200
+            detail = await _wait(lambda: _status(mara, run_id, "finished"))
+            assert detail["run"]["answer"] == "The billing app says: Saved 193725."
+            async with httpx.AsyncClient(base_url=server) as admin:
+                await _sign_in(admin, "it.admin@northwind-ops.com")
+                audit = (await admin.get("/api/admin/audit", params={"limit": 1000})).json()
+            acted = [r for r in audit if r["action"] == "agent.window.acted"]
+            assert [r["detail"]["action"] for r in acted] == ["set_text", "click"]
+            import threading; print("THREADS", [t.name for t in threading.enumerate()])
+        finally:
+            agent.stop()
+            conn.cancel()
+            app.terminate()
+    assert json.loads(saved.read_text())["annual_value"] == "193725"

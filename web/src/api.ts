@@ -26,7 +26,8 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 export type GrantKind = "files" | "screen" | "input";
 export interface Grant { granted: boolean; scope: string[]; updated_by?: string; updated_at?: number }
 export type Grants = Record<GrantKind, Grant>;
-export interface Agent { id: string; hostname: string; os: string; connected: boolean; grants: Grants; last_seen?: number }
+export interface Capabilities { files?: boolean; browser?: boolean; desktop?: boolean; screen?: boolean; input?: boolean; desktop_backend?: string | null }
+export interface Agent { id: string; hostname: string; os: string; connected: boolean; grants: Grants; capabilities?: Capabilities; last_seen?: number }
 export interface Me {
   user: { id: string; email: string; name: string; title: string; role: "member" | "admin" };
   org: { id: string; name: string; policy: Policy };

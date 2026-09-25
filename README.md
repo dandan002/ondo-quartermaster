@@ -4,12 +4,12 @@ An on-computer assistant for enterprise operations teams: it reads the files a
 team already works in, operates web portals through their accessibility tree, and
 stops for a person before anything is submitted, sent, overwritten or paid.
 
-This repository implements **Stages 0 to 3** of
+This repository implements **Stages 0 to 4** of
 [`docs/implementation-plan.md`](docs/implementation-plan.md) against the screens in
 [`design/`](design/README.md).
 
 ```
-agent/    Python desktop agent: harness, model layer, decision layer, tools, permission broker
+agent/    Python desktop agent: harness, model layer, decision layer, tools (files, browser, desktop), permission broker
 server/   TypeScript control plane: identity, device trust, pairing, grants, runs, audit, SIEM, SCIM
 web/      React web UI: landing, login flow, workspace, task run, files, admin console
 design/   The design canvas export (source of record for layout, colour and copy)
@@ -24,7 +24,8 @@ Browser ── HTTPS + SSE ──> Control plane (server/) <── websocket, ag
                             identity, policy, audit,                                  harness + event log
                             approvals, run history                                    model layer ──> gateway ──> any provider
                                                                                       decision layer (gates, screening)
-                                                                                      tools: files, browser (Playwright MCP)
+                                                                                      tools: files, browser (Playwright MCP),
+                                                                                        desktop (accessibility tree)
                                                                                       permission broker (3 grants, kill switch)
 ```
 
@@ -49,11 +50,13 @@ Browser ── HTTPS + SSE ──> Control plane (server/) <── websocket, ag
 ## Running it
 
 Requirements: Python 3.11+, Node 22+ (for `node:sqlite`), and a Chromium for the
-browser rung (`npx playwright install chromium`, or set `ONDO_CHROMIUM`).
+browser rung (`npx playwright install chromium`, or set `ONDO_CHROMIUM`). For the
+desktop rung on Linux: `apt install python3-pyatspi gir1.2-atspi-2.0 gir1.2-gtk-3.0`
+(plus `xvfb xdotool` to run its tests), and a venv that can see them.
 
 ```sh
 npm install                                   # server, web, and Playwright MCP
-cd agent && python -m venv .venv && .venv/bin/pip install -e ".[dev]" && cd ..
+cd agent && python3 -m venv --system-site-packages .venv && .venv/bin/pip install -e ".[dev,desktop]" && cd ..
 ```
 
 Local demo, no model provider needed (the `demo` profile is a labelled, scripted
@@ -88,6 +91,9 @@ and click for you", then try:
 - *Build the Q3 renewal pack for Northwind from the contracts in the client folder, and flag anything that uplifts above five per cent.*
 - *Why did row 14 not match the contract?* (in the assistant panel)
 - *Key the Q3 renewal changes from the signed contracts into the billing portal. Stop before submitting.*
+- *Update Halleck Logistics' annual value in the legacy billing app from the signed contract.*
+  Needs `desktop.enabled: true`, `ondo-agent legacy-app` running on the same
+  desktop, and the screen grant for the window "Legacy billing".
 
 Sign in as `it.admin@northwind-ops.com` for the admin console: revoke a grant
 while a task waits at an approval and watch the run stop.
@@ -106,14 +112,15 @@ With a real model: run a LiteLLM gateway (`deploy/litellm.yaml`), set
 ## Tests
 
 ```sh
-cd agent && .venv/bin/pytest -q      # 23 tests: stages 0, 1, 1.5, 3, and the stage 2 integration
+cd agent && .venv/bin/pytest -q      # 32 tests: stages 0 to 4, and the control-plane integration
 npm test                             # control plane (vitest) and web
 npm run typecheck
 ```
 
-The browser tests drive a real Chromium through Playwright MCP; the Stage 2
-integration test starts the real control plane. Both skip if their dependencies
-are missing. CI (`.github/workflows/ci.yml`) runs everything, including both
+The browser tests drive a real Chromium through Playwright MCP; the desktop tests
+start a throwaway X display, D-Bus session and AT-SPI registry and drive a real
+GTK app; the integration tests start the real control plane. Each skips if its
+dependencies are missing. CI (`.github/workflows/ci.yml`) runs everything, including both
 model wire formats, and fails if the committed gate thresholds no longer match
 their measurement.
 
@@ -126,6 +133,7 @@ their measurement.
 | 1.5 · Decision layer | Thresholds from measured precision and recall, screening on every read, decisions accumulating as labels | `test_stage15.py`; `python -m ondo_agent.decision.calibrate` over 50 hand-labelled actions writes `agent/config/thresholds.json` |
 | 2 · Login, policy, audit | An admin revokes a grant mid-run from the console and the run stops | `agent/tests/test_integration.py` (real server + real agent); `server/test/stage2.test.ts` |
 | 3 · The browser | A task spanning the document store and a web portal completes with no screenshots, passing with a text-only model | `test_stage3.py` — contracts from the granted folder keyed into the portal through the accessibility tree, one approval with exact before/after values, no images anywhere, origins enforced before and after navigation |
+| 4 · Semantic desktop control | A legacy app driven by element name, not coordinates, surviving a moved window and a rescaled display, picking its target without an orchestrator turn | `test_stage4.py` — a GTK billing app on a virtual display, run at 1× and 2× scale and moved and resized mid-task; the model names targets in words and the decision layer picks them; the submit is gated with the exact value; Escape twice (real keypresses) takes the keyboard back and stops the run. `test_integration.py` runs the same task through the control plane |
 
 ## What is not done, or not verified here
 
@@ -143,10 +151,20 @@ Said plainly, per the plan's own rule about never claiming what is not there:
 - **SSO** (OIDC with PKCE, SAML) is implemented but was only exercised through the
   development identity provider; no IdP was reachable. MDM-backed device posture
   is not integrated (the "managed" flag is never set).
-- **Stages 4–6.5 are not started**: semantic desktop control, pixels and screen
-  watching, first-party MCP connectors, saved workflows, and the local decision
-  model. The UI says so where it matters (the screen grant is recorded but the
-  agent does not watch the screen; there is no saved-workflows list).
+- **Only the Linux desktop backend (AT-SPI) has run.** The Windows (`pywinauto`,
+  UI Automation) and macOS (`AXUIElement`) backends are written to the same
+  interface but have never executed; both are marked UNTESTED in their modules.
+  Run `test_stage4.py` on each platform, against a native test app, before
+  relying on them. macOS's Accessibility permission cannot be granted for the
+  user; the backend refuses to start and says where to allow it.
+- **Element picking uses the rules baseline** (word overlap) unless a decision
+  model is configured. It refuses vague targets rather than guessing, but real
+  enterprise apps will need per-app profiles (`desktop.profiles`) for unnamed and
+  duplicate controls.
+- **Stages 5–6.5 are not started**: pixels and screenshots, screen watching as a
+  mode, first-party MCP connectors, saved workflows, and the local decision
+  model. The UI says so where it matters (there is no saved-workflows list, and
+  windows are read through their accessibility tree only).
 - **Office round-trips**: `openpyxl` keeps formulas (and macros in `.xlsm`) but
   drops charts and images on save. The plan's small COM path for what the
   libraries cannot do is not built.

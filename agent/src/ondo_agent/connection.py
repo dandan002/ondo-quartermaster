@@ -114,8 +114,15 @@ class ControlPlaneAgent:
     def _hello(self) -> dict[str, Any]:
         return {"type": "hello", "agent_id": self.creds.agent_id, "device": device_info(),
                 "grants": {k: {"granted": g.granted, "scope": g.scope} for k, g in self.state.grants.items()},
-                "capabilities": {"browser": bool(self.cfg.section("browser").get("enabled")), "files": True,
-                                 "screen": False, "input": False}}
+                "capabilities": self._capabilities()}
+
+    def _capabilities(self) -> dict[str, Any]:
+        desktop = bool(self.cfg.section("desktop").get("enabled"))
+        browser = bool(self.cfg.section("browser").get("enabled"))
+        return {"files": True, "browser": browser, "desktop": desktop,
+                "desktop_backend": self.cfg.section("desktop").get("backend", "auto") if desktop else None,
+                # What the screen and input grants actually unlock on this agent.
+                "screen": desktop, "input": desktop or browser, "pixels": False}
 
     # -- inbound ----------------------------------------------------------------
 
@@ -185,7 +192,7 @@ class ControlPlaneAgent:
             log.exception("run failed")
             self.send({"type": "run_status", "run_id": log_.run_id, "status": "error", "reason": str(e)})
         finally:
-            await a.model_close()
+            await a.aclose()  # the shared browser is a service, not the run's to close
             self.runs.pop(log_.run_id, None)
 
     # -- connection loop ----------------------------------------------------------

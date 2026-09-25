@@ -111,10 +111,11 @@ def _search(a) -> int:
 
 def _tools_doc(a) -> int:
     from .browser.tools import browser_tools
+    from .desktop.tools import desktop_tools
     from .tools.files import file_tools
     from .tools.spec import to_markdown
 
-    print(to_markdown(file_tools() + browser_tools()))
+    print(to_markdown(file_tools() + browser_tools() + desktop_tools()))
     return 0
 
 
@@ -124,6 +125,15 @@ def _demo_data(a) -> int:
     d = northwind.build(Path(a.dir))
     print(f"wrote {d}")
     return 0
+
+
+def _legacy_app(a) -> int:
+    import subprocess
+
+    args = [sys.executable, "-m", "ondo_agent.demo.legacy_app", "--title", a.title]
+    if a.out:
+        args += ["--out", a.out]
+    return subprocess.call(args)
 
 
 def _portal(a) -> int:
@@ -180,6 +190,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("dir")
     p = sub.add_parser("portal", help="serve the sample billing portal")
     p.add_argument("--port", type=int, default=8765)
+    p = sub.add_parser("legacy-app", help="open the sample legacy billing app (GTK) for the desktop rung")
+    p.add_argument("--title", default="Legacy billing")
+    p.add_argument("--out", default="")
     p = sub.add_parser("pair", help="pair this device with the control plane using the code from the web UI")
     p.add_argument("--server", required=True)
     p.add_argument("--code", required=True)
@@ -198,7 +211,7 @@ def main(argv: list[str] | None = None) -> None:
     a = ap.parse_args(argv)
     handlers = {"run": _run, "replay": _replay, "fork": _fork, "pair": _pair, "connect": _connect}
     sync = {"trajectory": _trajectory, "search": _search, "tools-doc": _tools_doc, "demo-data": _demo_data,
-            "portal": _portal}
+            "portal": _portal, "legacy-app": _legacy_app}
     if a.cmd in handlers:
         sys.exit(asyncio.run(handlers[a.cmd](a)))
     sys.exit(sync[a.cmd](a))
