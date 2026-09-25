@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm }
+      - run: npm ci
+      - name: Chromium for the browser rung
+        run: |
+          npx playwright install --with-deps chromium
+          echo "ONDO_CHROMIUM=$(node -e "console.log(require('playwright').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - run: pip install -e "agent[dev]"
+      # Both wire formats run in every build. Agnosticism that is not tested is a story.
+      - run: pytest -q agent/tests
+      - name: Gate thresholds still match their measurement
+        run: python -m ondo_agent.decision.calibrate --fixtures agent/fixtures/decision --out /tmp/t.json && python - <<'PY'
+          import json
+          a = json.load(open("/tmp/t.json"))["thresholds"]
+          b = json.load(open("agent/config/thresholds.json"))["thresholds"]
+          assert a == b, f"re-run calibration and commit agent/config/thresholds.json: {a} != {b}"
+          PY
+
+  web-and-control-plane:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build --workspace web

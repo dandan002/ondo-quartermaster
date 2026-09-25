@@ -4,6 +4,7 @@ import { all, now, one, run } from "../db.js";
 import { audit } from "../lib/audit.js";
 import { type UserRow, getAuthed, guard, sendCode, signIn, signOut, verifyCode } from "../lib/auth.js";
 import { verifyPassword } from "../lib/crypto.js";
+import { tooMany } from "../lib/limit.js";
 import { oidcFinish, oidcStart, samlFinish, samlStart, ssoLabel, ssoMode } from "../lib/sso.js";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -22,6 +23,7 @@ export function authRoutes(app: FastifyInstance, { db, cfg, hub }: Ctx): void {
 
   app.post<{ Body: { email?: string; password?: string } }>("/api/auth/login", async (req, reply) => {
     const { email = "", password = "" } = req.body ?? {};
+    if (tooMany(`login:${req.ip}`, 20, 10 * 60_000)) return reply.code(429).send({ error: "Too many attempts. Wait a few minutes and try again." });
     const user = findUser(email);
     const ok = verifyPassword(password, user?.password_hash);
     if (!user || !ok) {

@@ -12,6 +12,7 @@ import { now, one, parse, run } from "../db.js";
 import { audit } from "../lib/audit.js";
 import { guard } from "../lib/auth.js";
 import { id, sha256, sixDigits, token } from "../lib/crypto.js";
+import { tooMany } from "../lib/limit.js";
 import type { AgentRow } from "../lib/hub.js";
 import { type GrantKind, checkGrant, normalisePolicy } from "../lib/policy.js";
 
@@ -31,6 +32,7 @@ export function agentRoutes(app: FastifyInstance, { db, hub }: Ctx): void {
   });
 
   app.post<{ Body: { code?: string; device?: { hostname?: string; os?: string } } }>("/api/agent/pair", async (req, reply) => {
+    if (tooMany(`pair:${req.ip}`, 10, 10 * 60_000)) return reply.code(429).send({ error: "Too many attempts. Wait a few minutes and try again." });
     const code = String(req.body?.code ?? "").trim();
     const p = one<{ code_hash: string; user_id: string; device_id: string | null; expires_at: number; agent_id: string | null }>(db,
       "SELECT * FROM pairing_codes WHERE code_hash = ?", sha256(code));
