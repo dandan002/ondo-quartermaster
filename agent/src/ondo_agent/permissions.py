@@ -114,6 +114,8 @@ class PermissionBroker:
         self._excluded = [glob_to_regex(p) for p in self.policy.excluded_paths]
         self._stopped: RunStopped | None = None
         self._stop_event = asyncio.Event()
+        self._resumed = asyncio.Event()
+        self._resumed.set()
         self._listeners: list[Listener] = []
         for k in self.policy.disabled_grants:
             if k in self.grants:
@@ -174,6 +176,31 @@ class PermissionBroker:
             self._stopped = RunStopped(reason, by)
             self._stop_event.set()
             self._emit("stopped", {"reason": reason, "by": by})
+
+    def pause(self, *, by: str = "user") -> None:
+        if self._resumed.is_set():
+            self._resumed.clear()
+            self._emit("paused", {"by": by})
+
+    def resume(self, *, by: str = "user") -> None:
+        if not self._resumed.is_set():
+            self._resumed.set()
+            self._emit("resumed", {"by": by})
+
+    @property
+    def paused(self) -> bool:
+        return not self._resumed.is_set()
+
+    async def wait_resumed(self) -> None:
+        """Block while paused. A stop while paused ends the wait (and the run)."""
+        if self._resumed.is_set():
+            return
+        resumed = asyncio.ensure_future(self._resumed.wait())
+        stopped = asyncio.ensure_future(self._stop_event.wait())
+        await asyncio.wait({resumed, stopped}, return_when=asyncio.FIRST_COMPLETED)
+        resumed.cancel()
+        stopped.cancel()
+        self.ensure_running()
 
     @property
     def stopped(self) -> RunStopped | None:

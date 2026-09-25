@@ -29,6 +29,8 @@ from typing import Any, Callable, Iterable, Iterator
 RUN_STARTED = "run_started"
 RUN_FINISHED = "run_finished"
 RUN_STOPPED = "run_stopped"
+RUN_PAUSED = "run_paused"
+RUN_RESUMED = "run_resumed"
 SYSTEM_PROMPT = "system_prompt"
 USER_MESSAGE = "user_message"
 CONTEXT_INJECTION = "context_injection"

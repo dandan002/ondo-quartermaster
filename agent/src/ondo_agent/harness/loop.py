@@ -110,9 +110,15 @@ class Harness:
         return tot
 
     def _on_grant_change(self, kind: str, data: dict[str, Any]) -> None:
-        from ..log import GRANT_CHANGED
+        from ..log import GRANT_CHANGED, RUN_PAUSED, RUN_RESUMED
 
-        self.log.append(GRANT_CHANGED, f"broker:{data.get('by', 'user')}", {"change": kind, **data})
+        source = f"broker:{data.get('by', 'user')}"
+        if kind == "paused":
+            self.log.append(RUN_PAUSED, source, data)
+        elif kind == "resumed":
+            self.log.append(RUN_RESUMED, source, data)
+        elif kind != "stopped":  # a stop is logged once, as run_stopped
+            self.log.append(GRANT_CHANGED, source, {"change": kind, **data})
 
     # -- entry points -----------------------------------------------------------
 
@@ -138,6 +144,7 @@ class Harness:
         steps = 0
         try:
             while True:
+                await self.broker.wait_resumed()
                 self.broker.ensure_running()
                 usage = self._usage()
                 if steps >= self.budget.max_steps:
@@ -234,6 +241,7 @@ class Harness:
         self.log.append(STEP, "harness.steps", {"call_id": c.id, "title": spec.step_title(c.arguments),
                                                 "tool": c.name, "status": "running"})
         try:
+            await self.broker.wait_resumed()
             self.broker.ensure(spec.grant)
             assert spec.handler is not None
             task = asyncio.ensure_future(spec.handler(c.arguments, self.tool_ctx))

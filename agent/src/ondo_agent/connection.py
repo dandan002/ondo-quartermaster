@@ -124,10 +124,14 @@ class ControlPlaneAgent:
             self._apply_grants(msg)
         elif t == "policy":
             self.state.policy = Policy.from_dict(msg.get("policy"))
-        elif t == "stop_run":
+        elif t in ("stop_run", "pause_run", "resume_run"):
             b = self.runs.get(msg.get("run_id", ""))
-            if b:
+            if b and t == "stop_run":
                 b.stop(msg.get("reason", "stopped from the web"), by=msg.get("by", "user"))
+            elif b and t == "pause_run":
+                b.pause(by=msg.get("by", "user"))
+            elif b:
+                b.resume(by=msg.get("by", "user"))
         elif t == "ping":
             self.send({"type": "pong"})
 
@@ -141,7 +145,11 @@ class ControlPlaneAgent:
             for broker in self.runs.values():
                 current = broker.grants[kind]
                 if current.granted and not granted:
-                    broker.revoke(kind, by=by, reason=msg.get("reason", "revoked"))  # type: ignore[arg-type]
+                    reason = msg.get("reason", "revoked")
+                    broker.revoke(kind, by=by, reason=reason)  # type: ignore[arg-type]
+                    # The run was planned with this grant; it stops rather than
+                    # carrying on with less than it was started with.
+                    broker.stop(f"The {kind} grant was {reason}.", by=by)
                 elif granted and (not current.granted or current.scope != scope):
                     try:
                         broker.grant(kind, scope, by=by)  # type: ignore[arg-type]

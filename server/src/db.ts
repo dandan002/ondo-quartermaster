@@ -1,0 +1,223 @@
+// The control plane's system of record: identity, devices, agents, grants,
+// runs and their events, approvals, and the audit log. SQLite through
+// node:sqlite, so a pilot needs no database server; the SQL is portable.
+
+import { DatabaseSync } from "node:sqlite";
+
+export type DB = DatabaseSync;
+
+const SCHEMA = `
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS orgs (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  policy_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL REFERENCES orgs(id),
+  email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  name TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'member',        -- member | admin
+  active INTEGER NOT NULL DEFAULT 1,
+  password_hash TEXT,
+  external_id TEXT,                            -- SCIM externalId
+  groups_json TEXT NOT NULL DEFAULT '[]',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,                         -- sha256 of the cookie value
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_id TEXT,
+  stage TEXT NOT NULL,                         -- needs_device | verified
+  method TEXT NOT NULL,                        -- password | oidc | saml | dev-sso
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS devices (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  os TEXT NOT NULL DEFAULT '',
+  managed INTEGER NOT NULL DEFAULT 0,
+  trusted_until INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS verification_codes (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  code_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  used INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  to_addr TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pairing_codes (
+  code_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_id TEXT,
+  expires_at INTEGER NOT NULL,
+  agent_id TEXT
+);
+
+CREATE TABLE IF NOT EXISTS agents (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_id TEXT,
+  token_hash TEXT NOT NULL UNIQUE,
+  hostname TEXT NOT NULL DEFAULT '',
+  os TEXT NOT NULL DEFAULT '',
+  revoked INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS grants (
+  agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,                          -- files | screen | input
+  granted INTEGER NOT NULL,
+  scope_json TEXT NOT NULL DEFAULT '[]',
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT NOT NULL,
+  PRIMARY KEY (agent_id, kind)
+);
+
+CREATE TABLE IF NOT EXISTS runs (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL REFERENCES agents(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
+  request TEXT NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL,                        -- queued | running | waiting | finished | stopped | error
+  answer TEXT NOT NULL DEFAULT '',
+  reason TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS run_events (
+  run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  seq INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  source TEXT NOT NULL,
+  data_json TEXT NOT NULL,
+  ts REAL NOT NULL,
+  hash TEXT NOT NULL,
+  prev_hash TEXT NOT NULL,
+  PRIMARY KEY (run_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS approvals (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  effects_json TEXT NOT NULL,
+  values_json TEXT NOT NULL,
+  diff TEXT,
+  tool TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',      -- pending | approved | refused | expired
+  resolved_by TEXT,
+  resolved_at INTEGER,
+  note TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS audit (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  org_id TEXT NOT NULL,
+  ts INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target TEXT NOT NULL DEFAULT '',
+  detail_json TEXT NOT NULL DEFAULT '{}',
+  prev_hash TEXT NOT NULL,
+  hash TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS siem_sinks (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL REFERENCES orgs(id),
+  url TEXT NOT NULL,
+  format TEXT NOT NULL DEFAULT 'jsonl',        -- jsonl | cef
+  secret TEXT NOT NULL DEFAULT '',
+  enabled INTEGER NOT NULL DEFAULT 1,
+  cursor INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS scim_tokens (
+  token_hash TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL REFERENCES orgs(id),
+  label TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS runs_user ON runs(user_id, created_at);
+CREATE INDEX IF NOT EXISTS approvals_status ON approvals(status, created_at);
+CREATE INDEX IF NOT EXISTS audit_org ON audit(org_id, id);
+`;
+
+export function openDb(path: string): DB {
+  const db = new DatabaseSync(path);
+  db.exec(SCHEMA);
+  return db;
+}
+
+export function now(): number {
+  return Date.now();
+}
+
+// Small typed helpers over node:sqlite's statement API.
+export function one<T>(db: DB, sql: string, ...params: unknown[]): T | undefined {
+  return db.prepare(sql).get(...(params as never[])) as T | undefined;
+}
+
+export function all<T>(db: DB, sql: string, ...params: unknown[]): T[] {
+  return db.prepare(sql).all(...(params as never[])) as T[];
+}
+
+export function run(db: DB, sql: string, ...params: unknown[]): { changes: number } {
+  const r = db.prepare(sql).run(...(params as never[]));
+  return { changes: Number(r.changes) };
+}
+
+export function tx<T>(db: DB, fn: () => T): T {
+  db.exec("BEGIN");
+  try {
+    const out = fn();
+    db.exec("COMMIT");
+    return out;
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+}
+
+export function parse<T>(s: string | null | undefined, fallback: T): T {
+  if (!s) return fallback;
+  try {
+    return JSON.parse(s) as T;
+  } catch {
+    return fallback;
+  }
+}
