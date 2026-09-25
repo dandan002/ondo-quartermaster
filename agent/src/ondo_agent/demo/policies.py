@@ -133,3 +133,98 @@ def renewal_pack_policy(drive: Path, *, threshold_pct: float = 5.0):
         return say("\n".join(lines))
 
     return policy
+
+
+_FIELD = re.compile(r'textbox "Annual value — ([^"]+)" \[ref=([A-Za-z0-9_-]+)\](?:: "?(\d+)"?)?')
+_BUTTON = re.compile(r'button "Submit" \[ref=([A-Za-z0-9_-]+)\]')
+
+
+def renewal_submit_policy(drive: Path, portal_url: str):
+    """"Key the Q3 renewal changes from the signed contracts into the billing portal."
+    Document store (granted folder) and a web portal, driven through the
+    accessibility tree only. Text-only: no images are requested or read."""
+    contracts_dir = drive / "Contracts"
+
+    def policy(messages: list[Message], tools) -> ModelResponse:
+        t = _turns(messages)
+        results = _tool_results(messages)
+        last = results[-1][1] if results else ""
+        if t == 0:
+            return call(("list_folder", {"path": str(contracts_dir)}))
+        if t == 1:
+            files = re.findall(r"^(\S+\.(?:pdf|docx))\s", last, re.MULTILINE)
+            return call(*[("read_file", {"path": str(contracts_dir / f)}) for f in files])
+        contracts = parse_contracts(results)
+        if t == 2:
+            return call(("browser_navigate", {"url": portal_url.rstrip("/") + "/renewals"}))
+        if t == 3:
+            fields = []
+            for name, ref, current in _FIELD.findall(last):
+                c = contracts.get(name.title())
+                if c and current and c["new"] != int(current):
+                    fields.append({"ref": ref, "name": f"Annual value — {name}", "type": "textbox", "value": str(c["new"])})
+            if not fields:
+                return say("The portal already matches the signed contracts. Nothing to key.")
+            return call(("browser_fill_form", {"fields": fields}))
+        if t == 4:
+            m = _BUTTON.search(last)
+            if not m:
+                return say("I could not find the Submit button on the renewal batch page.")
+            return call(("browser_click", {"ref": m.group(1), "element": "Submit button"}))
+        saved = re.search(r"Saved (\d+) change", last)
+        if saved:
+            return say(f"The billing portal saved {saved.group(1)} change(s) from the signed contracts.")
+        if "not approved" in last:
+            return say("The submission was not approved, so nothing was saved in the billing portal.")
+        return say("I could not confirm the submission. Please check the renewal batch page.")
+
+    return policy
+
+
+def demo_router(cfg, profile):
+    """The ``scripted`` demo profile: routes a request to one of the demo policies.
+
+    For running the product end to end with no model provider configured. It is
+    labelled as scripted in every log event, so nothing it does is mistaken for
+    a model's work.
+    """
+    drive = cfg.resolve(profile.extra.get("drive", "demo/Northwind client drive"))
+    portal = profile.extra.get("portal_url", "http://127.0.0.1:8765")
+    chosen: dict[str, Any] = {}
+
+    def policy(messages: list[Message], tools) -> ModelResponse:
+        if "p" not in chosen:
+            request = next((m.text for m in messages if m.role == "user" and not m.text.startswith("<environment>")), "")
+            r = request.lower()
+            if any(w in r for w in ("portal", "billing system", "key the", "submit")):
+                chosen["p"] = renewal_submit_policy(drive, portal)
+            elif "row 14" in r or "why" in r:
+                chosen["p"] = _spreadsheet_question(drive)
+            else:
+                chosen["p"] = renewal_pack_policy(drive)
+        return chosen["p"](messages, tools)
+
+    return policy
+
+
+def _spreadsheet_question(drive: Path):
+    def policy(messages: list[Message], tools) -> ModelResponse:
+        t = _turns(messages)
+        results = _tool_results(messages)
+        if t == 0:
+            return call(("read_file", {"path": str(drive / "Q3_Renewals.xlsx")}),
+                        ("read_file", {"path": str(drive / "Contracts" / "Halleck_MSA_2026.pdf")}))
+        book = parse_workbook(results)
+        contracts = parse_contracts(results)
+        row = next(((n, r) for n, r in book.items() if r["row"] == 14), None)
+        if not row:
+            return say("I could not find row 14 in the workbook.")
+        name, r = row
+        c = contracts.get(name)
+        if c and abs(c["uplift"] - r["pct"]) > 1e-9:
+            return say(f"Row 14 is {name}. The workbook has a {r['pct']:g}% uplift; the signed contract "
+                       f"({c['file']}, clause 7.2) says {c['uplift']:g}%. The workbook figure looks like it was "
+                       f"carried over from last year's pack.\n\nI can correct row 14 and re-run the pack totals. Shall I?")
+        return say(f"Row 14 is {name}, and it matches the contract.")
+
+    return policy

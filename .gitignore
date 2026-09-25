@@ -9,3 +9,5 @@ __pycache__/
 *.sqlite
 *.sqlite-journal
 .env
+ondo.yaml
+agent/demo/

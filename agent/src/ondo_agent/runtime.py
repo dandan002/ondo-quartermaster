@@ -100,8 +100,14 @@ def make_model(cfg: Config, name: str | None = None) -> ModelClient:
     name = name or m.get("orchestrator")
     if not name or name not in cfg.profiles:
         raise ValueError(f"model profile {name!r} not configured (have: {', '.join(cfg.profiles) or 'none'})")
+    profile = cfg.profiles[name]
+    if profile.adapter == "scripted":
+        from .demo.policies import demo_router
+        from .models.adapters.scripted import ScriptedModel
+
+        return ModelClient(profile, ScriptedModel(demo_router(cfg, profile), name=profile.name))
     fallbacks = [ModelClient(cfg.profiles[f]) for f in m.get("fallbacks", []) if f != name]
-    return ModelClient(cfg.profiles[name], fallbacks=fallbacks)
+    return ModelClient(profile, fallbacks=fallbacks)
 
 
 def make_decision(cfg: Config) -> LoggedDecisionModel:
@@ -151,6 +157,7 @@ async def assemble(
     log: EventLog | None = None,
     broker: PermissionBroker | None = None,
     user: str = "local-user",
+    services: dict[str, Any] | None = None,
 ) -> Assembled:
     broker = broker or make_broker(cfg)
     decision = make_decision(cfg)
@@ -163,16 +170,17 @@ async def assemble(
     b = cfg.section("budget")
     tools = make_tools(cfg)
     cleanup: list[Any] = [model.aclose]
+    services: dict[str, Any] = dict(services or {})
+    if cfg.section("browser").get("enabled") and "browser" not in services:
+        from .browser.session import BrowserSession
+
+        session = BrowserSession.from_config(cfg.section("browser"), cfg)
+        services["browser"] = session
+        cleanup.append(session.aclose)
     harness = Harness(
         model=model, tools=tools, log=log, broker=broker, gates=gates,
         approvals=approvals or TerminalApprovals(user), screener=screener,
         budget=Budget(int(b.get("max_steps", 40)), int(b.get("max_tokens", 1_000_000))),
-        config=cfg.raw, user=user,
+        config=cfg.raw, user=user, services=services,
     )
-    if cfg.section("browser").get("enabled"):
-        from .browser.session import BrowserSession
-
-        session = BrowserSession.from_config(cfg.section("browser"), cfg)
-        harness.config["_browser_session"] = session
-        cleanup.append(session.aclose)
     return Assembled(harness, broker, log, cleanup)

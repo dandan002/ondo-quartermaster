@@ -73,6 +73,7 @@ class Harness:
         budget: Budget | None = None,
         config: dict[str, Any] | None = None,
         user: str = "local-user",
+        services: dict[str, Any] | None = None,
     ):
         self.model = model
         self.tools = {t.name: t for t in tools}
@@ -85,6 +86,8 @@ class Harness:
         self.budget = budget or Budget()
         self.config = config or {}
         self.user = user
+        # Long-lived things tools may use (the browser session). Not state: the log is.
+        self.services = services or {}
         self.policy = ctx.ContextPolicy(context_window=model.profile.context_window)
         self._collapsed_logged: set[int] = set()
         self.tool_ctx = ToolContext(
