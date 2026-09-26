@@ -32,7 +32,10 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: github.event_name == 'pull_request'
+    # Needs the repository's Dependency graph turned on. Off until an admin
+    # enables it and sets the repository variable DEPENDENCY_REVIEW to "true";
+    # Dependency audit below covers known advisories meanwhile.
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

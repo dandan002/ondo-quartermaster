@@ -11,7 +11,7 @@ What runs, when, and what it protects. Everything here lives in `.github/`.
 | `ci` | **Control plane and web tests** | Server or web tests fail, or either does not build |
 | `ci` | **Container image builds** | The Dockerfile does not build, or the image does not come up healthy and non-root |
 | `security` | **Secret scan** | gitleaks finds a secret anywhere in the history the PR adds |
-| `security` | **Dependency review** | The PR adds a dependency with a high or critical advisory, or a GPL-3.0/AGPL-3.0 licence |
+| `security` | **Dependency review** (off by default, see below) | The PR adds a dependency with a high or critical advisory, or a GPL-3.0/AGPL-3.0 licence |
 | `security` | **Dependency audit** | A shipped npm dependency (server, web) or a declared agent dependency has a known high or critical advisory |
 | `codeql` | **CodeQL (python)**, **CodeQL (javascript-typescript)** | Reports security findings to Security → Code scanning |
 
@@ -78,8 +78,8 @@ In **Settings**:
      maintainer joins.
    - Require status checks to pass, with *Require branches to be up to date*:
      `Lint and typecheck`, `Agent tests`, `Control plane and web tests`,
-     `Container image builds`, `Secret scan`, `Dependency review`,
-     `Dependency audit`, `CodeQL (python)`, `CodeQL (javascript-typescript)`.
+     `Container image builds`, `Secret scan`, `Dependency audit`,
+     `CodeQL (python)`, `CodeQL (javascript-typescript)`.
      (A check can be selected once it has run at least once.)
    - Require code scanning results: CodeQL, blocking on *High or higher*.
    - Optionally, require signed commits.
@@ -91,6 +91,10 @@ In **Settings**:
 4. **Code security**: turn on Dependency graph, Dependabot alerts, Dependabot
    security updates, Secret scanning and **Push protection** (which blocks a
    secret before it reaches GitHub at all).
+5. **Dependency review** is skipped until the Dependency graph is on. To turn
+   it on: enable Dependency graph (step 4), then add the repository variable
+   `DEPENDENCY_REVIEW` = `true` (**Secrets and variables → Actions →
+   Variables**), and add `Dependency review` to the required checks.
 
 Until then the gate is the required checks, not a second person: nothing
 merges to `main` without a pull request that passes all of them.
