@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+agent
+design
+docs
+deploy
+.git
+.github
+*.sqlite*

@@ -10,8 +10,10 @@ descriptions do more work than the system prompt; write them like documentation.
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Literal
+from typing import Any, Literal
 
 # The effect a tool *may* have. Gates are decided on effect, not on tool (see
 # ``gates.py``), but the tool's declared ceiling is the first deterministic input.
@@ -50,8 +52,8 @@ class ToolSpec:
         if self.title:
             try:
                 return self.title(args)
-            except Exception:
-                pass
+            except Exception:  # a bad title must never break a run; fall back to the name
+                logging.getLogger("ondo.agent").debug("step title failed for %s", self.name, exc_info=True)
         return self.name.replace("_", " ").capitalize()
 
     def schema(self) -> dict[str, Any]:

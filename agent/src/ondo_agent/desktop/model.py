@@ -19,7 +19,7 @@ from typing import Any, Protocol
 
 @dataclass(frozen=True)
 class Window:
-    id: str          # backend-specific, only valid for this read
+    id: str  # backend-specific, only valid for this read
     title: str
     app: str
     pid: int = 0
@@ -48,7 +48,7 @@ class Element:
         return f'{self.role} "{self.name}"' if self.name else self.role
 
     @property
-    def locator(self) -> "Locator":
+    def locator(self) -> Locator:
         return Locator(self.role, self.name, self.occurrence)
 
     @property
@@ -67,8 +67,20 @@ class Locator:
 
 
 # Roles that carry a value a person would want to see before something lands.
-FIELD_ROLES = {"text", "entry", "edit", "password text", "spin button", "combo box", "check box",
-               "radio button", "slider", "textfield", "text field", "document text"}
+FIELD_ROLES = {
+    "text",
+    "entry",
+    "edit",
+    "password text",
+    "spin button",
+    "combo box",
+    "check box",
+    "radio button",
+    "slider",
+    "textfield",
+    "text field",
+    "document text",
+}
 # Roles whose activation commits something: gate candidates.
 COMMIT_ROLES = {"push button", "button", "menu item", "link", "toggle button"}
 

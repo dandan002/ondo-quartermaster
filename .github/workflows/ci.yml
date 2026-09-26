@@ -1,12 +1,51 @@
 name: ci
 
+# Every pull request, every push to main, and every release (release.yml calls
+# this workflow and ships nothing unless it passes). The job names below are the
+# required status checks in the branch ruleset: see docs/ci-cd.md.
+
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  agent:
+  lint:
+    name: Lint and typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm }
+      - name: Python lint and format (ruff)
+        run: |
+          pip install "ruff==0.16.9"
+          ruff check agent
+          ruff format --check agent
+      - name: Workflow lint (actionlint)
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color
+      - run: npm ci
+      - name: TypeScript typecheck (server and web)
+        run: npm run typecheck
+
+  agent:
+    name: Agent tests
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Desktop accessibility stack for the Stage 4 tests
@@ -30,12 +69,42 @@ jobs:
           python3 -c 'import json,sys; a=json.load(open("/tmp/t.json"))["thresholds"]; b=json.load(open("agent/config/thresholds.json"))["thresholds"]; sys.exit(0 if a==b else "re-run calibration and commit agent/config/thresholds.json")'
 
   web-and-control-plane:
+    name: Control plane and web tests
+    needs: lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "22", cache: npm }
       - run: npm ci
-      - run: npm run typecheck
       - run: npm test
       - run: npm run build --workspace web
+      - run: npm run build --workspace server
+
+  image:
+    name: Container image builds
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (not pushed)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ondo-control-plane:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test the image
+        run: |
+          docker run -d --name cp -p 8787:8787 \
+            -e ONDO_COOKIE_SECRET="$(openssl rand -base64 32)" -e ONDO_PUBLIC_URL=http://127.0.0.1:8787 \
+            ondo-control-plane:ci
+          for _ in $(seq 30); do curl -sf http://127.0.0.1:8787/healthz && break; sleep 1; done
+          curl -sf http://127.0.0.1:8787/healthz
+          test "$(docker exec cp id -un)" = node
+          docker rm -f cp

@@ -125,17 +125,30 @@ class Harness:
     def start(self, request: str) -> None:
         """Write the opening events. Separate from ``run`` so a fork can skip it."""
         p = self.model.profile
-        self.log.append(RUN_STARTED, "harness", {
-            "request": request, "user": self.user, "model": p.model, "profile": p.name,
-            "tools": list(self.tools), "grants": self.broker.snapshot(),
-        })
+        self.log.append(
+            RUN_STARTED,
+            "harness",
+            {
+                "request": request,
+                "user": self.user,
+                "model": p.model,
+                "profile": p.name,
+                "tools": list(self.tools),
+                "grants": self.broker.snapshot(),
+            },
+        )
         self.log.append(SYSTEM_PROMPT, "harness.prompt.base", {"text": system_prompt()})
         if p.prompt_overlay:
             self.log.append(SYSTEM_PROMPT, f"profile:{p.name}", {"text": p.prompt_overlay})
-        self.log.append(CONTEXT_INJECTION, "harness.environment", {
-            "text": environment_block(run_id=self.log.run_id, user=self.user, grants=self.broker.snapshot(),
-                                      tools=list(self.tools)),
-        })
+        self.log.append(
+            CONTEXT_INJECTION,
+            "harness.environment",
+            {
+                "text": environment_block(
+                    run_id=self.log.run_id, user=self.user, grants=self.broker.snapshot(), tools=list(self.tools)
+                ),
+            },
+        )
         self.log.append(USER_MESSAGE, f"user:{self.user}", {"text": request})
 
     async def run(self, request: str | None = None) -> RunResult:
@@ -178,10 +191,16 @@ class Harness:
             if new:
                 self._collapsed_logged.update(new)
                 self.log.append(CONTEXT_COLLAPSED, "harness.context", {"seqs": new, "aggressive": attempt == 1})
-            self.log.append(MODEL_REQUEST, f"model:{self.model.profile.name}", {
-                "profile": self.model.profile.name, "model": self.model.profile.model,
-                "messages": len(messages), "estimated_tokens": ctx.estimate_tokens(messages),
-            })
+            self.log.append(
+                MODEL_REQUEST,
+                f"model:{self.model.profile.name}",
+                {
+                    "profile": self.model.profile.name,
+                    "model": self.model.profile.model,
+                    "messages": len(messages),
+                    "estimated_tokens": ctx.estimate_tokens(messages),
+                },
+            )
             # Race the call against the kill switch: a stop must not wait for a
             # slow provider.
             call = asyncio.ensure_future(self.model.complete(messages, tools))
@@ -198,15 +217,24 @@ class Harness:
                     continue
                 raise
             served = self.model.last_profile
-            self.log.append(MODEL_RESPONSE, f"model:{served.name}", {
-                "text": r.text,
-                "tool_calls": [{"id": c.id, "name": c.name, "arguments": c.arguments} for c in r.tool_calls],
-                "stop_reason": r.stop_reason, "raw_stop_reason": r.raw_stop_reason,
-                "usage": {"input_tokens": r.usage.input_tokens, "output_tokens": r.usage.output_tokens,
-                          "cached_input_tokens": r.usage.cached_input_tokens},
-                "model": r.model or served.model, "profile": served.name,
-                **({"reasoning": r.reasoning} if r.reasoning else {}),
-            })
+            self.log.append(
+                MODEL_RESPONSE,
+                f"model:{served.name}",
+                {
+                    "text": r.text,
+                    "tool_calls": [{"id": c.id, "name": c.name, "arguments": c.arguments} for c in r.tool_calls],
+                    "stop_reason": r.stop_reason,
+                    "raw_stop_reason": r.raw_stop_reason,
+                    "usage": {
+                        "input_tokens": r.usage.input_tokens,
+                        "output_tokens": r.usage.output_tokens,
+                        "cached_input_tokens": r.usage.cached_input_tokens,
+                    },
+                    "model": r.model or served.model,
+                    "profile": served.name,
+                    **({"reasoning": r.reasoning} if r.reasoning else {}),
+                },
+            )
             return r
         raise AssertionError("unreachable")
 
@@ -231,15 +259,26 @@ class Harness:
 
     async def _run_tool(self, c: ToolCall) -> ToolResult:
         spec = self.tools.get(c.name)
-        self.log.append(TOOL_CALL, f"model:{self.model.last_profile.name}", {
-            "call_id": c.id, "name": c.name, "arguments": c.arguments,
-        })
+        self.log.append(
+            TOOL_CALL,
+            f"model:{self.model.last_profile.name}",
+            {
+                "call_id": c.id,
+                "name": c.name,
+                "arguments": c.arguments,
+            },
+        )
         if spec is None:
             return ToolResult(f"Unknown tool {c.name!r}. Available: {', '.join(self.tools)}.", is_error=True)
         if "__unparsed_arguments__" in c.arguments:
-            return ToolResult("The tool arguments were not valid JSON. Send them again as a JSON object.", is_error=True)
-        self.log.append(STEP, "harness.steps", {"call_id": c.id, "title": spec.step_title(c.arguments),
-                                                "tool": c.name, "status": "running"})
+            return ToolResult(
+                "The tool arguments were not valid JSON. Send them again as a JSON object.", is_error=True
+            )
+        self.log.append(
+            STEP,
+            "harness.steps",
+            {"call_id": c.id, "title": spec.step_title(c.arguments), "tool": c.name, "status": "running"},
+        )
         try:
             await self.broker.wait_resumed()
             self.broker.ensure(spec.grant)
@@ -255,11 +294,20 @@ class Harness:
         except RunStopped:
             raise
         except PermissionDenied as p:
-            self.log.append(PERMISSION_DENIED, "broker", {
-                "call_id": c.id, "tool": c.name, "kind": p.kind, "reason": p.reason, "target": p.target,
-            })
-            result = ToolResult(f"Permission denied: {p}. This is final for this run.", is_error=True,
-                                detail={"permission": p.reason})
+            self.log.append(
+                PERMISSION_DENIED,
+                "broker",
+                {
+                    "call_id": c.id,
+                    "tool": c.name,
+                    "kind": p.kind,
+                    "reason": p.reason,
+                    "target": p.target,
+                },
+            )
+            result = ToolResult(
+                f"Permission denied: {p}. This is final for this run.", is_error=True, detail={"permission": p.reason}
+            )
         except Exception as e:  # a tool bug becomes a readable error, not a dead run
             result = ToolResult(f"{type(e).__name__}: {e}", is_error=True)
 
@@ -267,26 +315,51 @@ class Harness:
             screen = None
             if self.screener is not None:
                 screen = await self.screener.screen(result.content, result.untrusted_origin, self.log)
-            result = ToolResult(fence(result.content, result.untrusted_origin, screen), result.is_error,
-                                {**result.detail, "screening": None if screen is None else
-                                 {"flagged": screen.flagged, "probability": screen.probability}},
-                                result.untrusted_origin)
-        self.log.append(STEP, "harness.steps", {
-            "call_id": c.id, "title": spec.step_title(c.arguments), "tool": c.name,
-            "status": "error" if result.is_error else "done", "detail": _step_detail(result),
-        })
+            result = ToolResult(
+                fence(result.content, result.untrusted_origin, screen),
+                result.is_error,
+                {
+                    **result.detail,
+                    "screening": None
+                    if screen is None
+                    else {"flagged": screen.flagged, "probability": screen.probability},
+                },
+                result.untrusted_origin,
+            )
+        self.log.append(
+            STEP,
+            "harness.steps",
+            {
+                "call_id": c.id,
+                "title": spec.step_title(c.arguments),
+                "tool": c.name,
+                "status": "error" if result.is_error else "done",
+                "detail": _step_detail(result),
+            },
+        )
         return result
 
     def _log_result(self, c: ToolCall, r: ToolResult) -> None:
-        self.log.append(TOOL_RESULT, f"tool:{c.name}", {
-            "call_id": c.id, "name": c.name, "content": r.content, "is_error": r.is_error,
-            "origin": r.untrusted_origin, "detail": _jsonable(r.detail),
-        })
+        self.log.append(
+            TOOL_RESULT,
+            f"tool:{c.name}",
+            {
+                "call_id": c.id,
+                "name": c.name,
+                "content": r.content,
+                "is_error": r.is_error,
+                "origin": r.untrusted_origin,
+                "detail": _jsonable(r.detail),
+            },
+        )
 
 
 def _step_detail(r: ToolResult) -> dict[str, Any]:
-    d = {k: v for k, v in r.detail.items() if k in ("summary", "path", "url", "files", "values", "screening",
-                                                     "approval", "permission", "effects")}
+    d = {
+        k: v
+        for k, v in r.detail.items()
+        if k in ("summary", "path", "url", "files", "values", "screening", "approval", "permission", "effects")
+    }
     if r.is_error:
         d["error"] = r.content[:300]
     return _jsonable(d)

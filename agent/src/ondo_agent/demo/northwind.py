@@ -47,8 +47,7 @@ TOTAL_INCREASE = sum(a.new_value - a.current for a in ACCOUNTS)  # 41,190
 
 def _contract_lines(a: Account) -> list[str]:
     uplift = (
-        f"7.2 Annual uplift. From {a.renewal} the annual fee increases by {a.uplift_pct:g}% "
-        f"to {a.new_value:,} GBP."
+        f"7.2 Annual uplift. From {a.renewal} the annual fee increases by {a.uplift_pct:g}% to {a.new_value:,} GBP."
         if a.uplift_pct
         else f"7.2 Annual uplift. No uplift applies at the next renewal on {a.renewal}. The annual fee remains {a.current:,} GBP."
     )
@@ -79,7 +78,7 @@ def write_pdf(path: Path, lines: list[str]) -> None:
     objs.append(f"<< /Type /Pages /Kids [{kids}] /Count {n_pages} >>".encode())
     objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
     for i, pl in enumerate(pages):
-        body = "BT /F1 10 Tf 60 780 Td 15 TL " + " ".join(f"({esc(l)}) Tj T*" for l in pl) + " ET"
+        body = "BT /F1 10 Tf 60 780 Td 15 TL " + " ".join(f"({esc(line)}) Tj T*" for line in pl) + " ET"
         stream = body.encode("latin-1", errors="replace")
         objs.append(
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> "

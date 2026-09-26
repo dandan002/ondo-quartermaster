@@ -16,6 +16,8 @@ import time
 from pathlib import Path
 
 import pytest
+from conftest import base_config
+from desktop_env import available
 
 from ondo_agent import log as L
 from ondo_agent.approvals import AutoApprovals
@@ -27,24 +29,33 @@ from ondo_agent.models.adapters.scripted import call, say
 from ondo_agent.models.gateway import scripted_client
 from ondo_agent.runtime import assemble
 
-from conftest import base_config
-from desktop_env import available
-
 needs_desktop = pytest.mark.skipif(not available(), reason="needs Xvfb, D-Bus, AT-SPI and xdotool (Linux)")
 THRESHOLDS = str(Path(__file__).resolve().parents[1] / "config" / "thresholds.json")
 
 
 def desktop_config(drive, tmp_path, *, screen=("Legacy billing",), **over):
     return base_config(
-        drive, tmp_path,
-        grants={"files": {"granted": True, "folders": [str(drive)]},
-                "screen": {"granted": True, "windows": list(screen)},
-                "input": {"granted": True}},
+        drive,
+        tmp_path,
+        grants={
+            "files": {"granted": True, "folders": [str(drive)]},
+            "screen": {"granted": True, "windows": list(screen)},
+            "input": {"granted": True},
+        },
         policy={"excluded_paths": ["**/HR/**"], "excluded_windows": ["Password manager", "Personal mail", "HR portal"]},
         desktop={"enabled": True, "escape_twice": True, "profiles": {"Legacy billing": {"push button#1": "Refresh"}}},
-        gates={"thresholds_file": THRESHOLDS,
-               "rules": [{"effect": "submits_to_system_of_record", "action": "require", "name": "legacy-billing-submit",
-                          "app": "Legacy billing", "element": r'^push button "Submit"'}]},
+        gates={
+            "thresholds_file": THRESHOLDS,
+            "rules": [
+                {
+                    "effect": "submits_to_system_of_record",
+                    "action": "require",
+                    "name": "legacy-billing-submit",
+                    "app": "Legacy billing",
+                    "element": r'^push button "Submit"',
+                }
+            ],
+        },
         **over,
     )
 
@@ -65,7 +76,9 @@ async def test_legacy_app_by_element_name_survives_move_and_rescale(desktop, dri
         model = scripted_client(legacy_app_policy(drive, between=move), name="text-only", supports_vision=False)
         a = await assemble(desktop_config(drive, tmp_path), model=model, approvals=approvals)
         try:
-            res = await a.harness.run("Update Halleck Logistics' annual value in the legacy billing app from the signed contract.")
+            res = await a.harness.run(
+                "Update Halleck Logistics' annual value in the legacy billing app from the signed contract."
+            )
         finally:
             await a.aclose()
     finally:
@@ -101,15 +114,22 @@ async def test_legacy_app_by_element_name_survives_move_and_rescale(desktop, dri
 async def test_windows_follow_the_screen_grant_and_policy(desktop, drive, tmp_path):
     apps = [desktop.launch(t) for t in ("Legacy billing", "Password manager", "Notes")]
     try:
-        script = iter([
-            call(("desktop_windows", {})),
-            call(("desktop_act", {"window": "Password manager", "target": "Submit button", "action": "click"}),
-                 ("desktop_inspect", {"window": "Notes"}),
-                 ("desktop_inspect", {"window": "Legacy billing"})),
-            say("done"),
-        ])
-        a = await assemble(desktop_config(drive, tmp_path), model=scripted_client(lambda m, t: next(script)),
-                           approvals=AutoApprovals(True))
+        script = iter(
+            [
+                call(("desktop_windows", {})),
+                call(
+                    ("desktop_act", {"window": "Password manager", "target": "Submit button", "action": "click"}),
+                    ("desktop_inspect", {"window": "Notes"}),
+                    ("desktop_inspect", {"window": "Legacy billing"}),
+                ),
+                say("done"),
+            ]
+        )
+        a = await assemble(
+            desktop_config(drive, tmp_path),
+            model=scripted_client(lambda m, t: next(script)),
+            approvals=AutoApprovals(True),
+        )
         try:
             await a.harness.run("look")
         finally:
@@ -136,9 +156,14 @@ async def test_windows_follow_the_screen_grant_and_policy(desktop, drive, tmp_pa
 async def test_vague_targets_are_refused_not_guessed(desktop, drive, tmp_path):
     app = desktop.launch("Legacy billing")
     try:
-        script = iter([call(("desktop_act", {"window": "Legacy billing", "target": "the thing", "action": "click"})), say("ok")])
-        a = await assemble(desktop_config(drive, tmp_path), model=scripted_client(lambda m, t: next(script)),
-                           approvals=AutoApprovals(True))
+        script = iter(
+            [call(("desktop_act", {"window": "Legacy billing", "target": "the thing", "action": "click"})), say("ok")]
+        )
+        a = await assemble(
+            desktop_config(drive, tmp_path),
+            model=scripted_client(lambda m, t: next(script)),
+            approvals=AutoApprovals(True),
+        )
         try:
             await a.harness.run("click something")
         finally:
@@ -155,12 +180,16 @@ async def test_escape_twice_takes_the_keyboard_back(desktop, drive, tmp_path):
     saved = tmp_path / "saved.json"
     app = desktop.launch("Legacy billing", out=saved)
     try:
+
         def press():
             desktop.keys("Escape", "Escape")
             time.sleep(0.5)
 
-        a = await assemble(desktop_config(drive, tmp_path), approvals=AutoApprovals(True),
-                           model=scripted_client(legacy_app_policy(drive, between=press)))
+        a = await assemble(
+            desktop_config(drive, tmp_path),
+            approvals=AutoApprovals(True),
+            model=scripted_client(legacy_app_policy(drive, between=press)),
+        )
         try:
             res = await a.harness.run("Update Halleck in the legacy billing app.")
         finally:
@@ -181,12 +210,12 @@ def test_escape_twice_timing():
     hits = []
     w = EscapeTwice(lambda: hits.append(1), window_s=0.3)
     assert not w.press(True)
-    assert w.press(True)            # second within the window
-    assert not w.press(True)        # a third starts over
-    w.press(False)                  # any other key resets
+    assert w.press(True)  # second within the window
+    assert not w.press(True)  # a third starts over
+    w.press(False)  # any other key resets
     assert not w.press(True)
     time.sleep(0.35)
-    assert not w.press(True)        # too slow
+    assert not w.press(True)  # too slow
     assert hits == [1]
 
 

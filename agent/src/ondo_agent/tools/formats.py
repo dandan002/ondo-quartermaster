@@ -16,8 +16,16 @@ from pathlib import Path
 from typing import Any
 
 KINDS = {
-    ".xlsx": "Workbook", ".xlsm": "Workbook", ".docx": "Document", ".pptx": "Deck", ".pdf": "PDF",
-    ".csv": "Data", ".tsv": "Data", ".txt": "Text", ".md": "Text", ".json": "Data",
+    ".xlsx": "Workbook",
+    ".xlsm": "Workbook",
+    ".docx": "Document",
+    ".pptx": "Deck",
+    ".pdf": "PDF",
+    ".csv": "Data",
+    ".tsv": "Data",
+    ".txt": "Text",
+    ".md": "Text",
+    ".json": "Data",
 }
 
 
@@ -55,12 +63,14 @@ def read_xlsx(path: Path, *, sheet: str | None = None, max_rows: int = 300) -> R
             continue
         ws, wf = values[name], formulas[name]
         out.append(f'## Sheet "{name}" ({ws.max_row} rows x {ws.max_column} columns)')
-        for i, (row_v, row_f) in enumerate(zip(ws.iter_rows(), wf.iter_rows())):
+        for i, (row_v, row_f) in enumerate(zip(ws.iter_rows(), wf.iter_rows(), strict=False)):
             if i >= max_rows:
-                out.append(f"... {ws.max_row - max_rows} more rows. Read again with a sheet name and a higher max_rows if needed.")
+                out.append(
+                    f"... {ws.max_row - max_rows} more rows. Read again with a sheet name and a higher max_rows if needed."
+                )
                 break
             cells = []
-            for cv, cf in zip(row_v, row_f):
+            for cv, cf in zip(row_v, row_f, strict=False):
                 v = cv.value
                 f = cf.value
                 if v is None and isinstance(f, str) and f.startswith("="):
@@ -152,8 +162,9 @@ def read_text(path: Path, *, max_rows: int = 300) -> ReadOut:
     return ReadOut(raw, {"lines": len(lines)})
 
 
-def read_any(path: Path, *, sheet: str | None = None, pages: str | None = None, max_rows: int = 300,
-             max_chars: int = 60_000) -> ReadOut:
+def read_any(
+    path: Path, *, sheet: str | None = None, pages: str | None = None, max_rows: int = 300, max_chars: int = 60_000
+) -> ReadOut:
     ext = path.suffix.lower()
     if ext in (".xlsx", ".xlsm"):
         r = read_xlsx(path, sheet=sheet, max_rows=max_rows)
@@ -166,7 +177,10 @@ def read_any(path: Path, *, sheet: str | None = None, pages: str | None = None, 
     else:
         r = read_text(path, max_rows=max_rows)
     if len(r.text) > max_chars:
-        r.text = r.text[:max_chars] + f"\n... truncated at {max_chars:,} characters. Read a sheet or page range for the rest."
+        r.text = (
+            r.text[:max_chars]
+            + f"\n... truncated at {max_chars:,} characters. Read a sheet or page range for the rest."
+        )
         r.meta["truncated"] = True
     return r
 
@@ -204,8 +218,15 @@ def plan_workbook_edits(path: Path, edits: list[CellEdit]) -> list[dict[str, Any
             raise ValueError(f'sheet "{e.sheet}" not in {path.name} (sheets: {", ".join(wb.sheetnames)})')
         before = wb[e.sheet][e.cell].value
         after = _coerce(e.value)
-        changes.append({"sheet": e.sheet, "cell": e.cell.upper(), "before": _fmt(before), "after": _fmt(after),
-                        "changed": _fmt(before) != _fmt(after)})
+        changes.append(
+            {
+                "sheet": e.sheet,
+                "cell": e.cell.upper(),
+                "before": _fmt(before),
+                "after": _fmt(after),
+                "changed": _fmt(before) != _fmt(after),
+            }
+        )
     return changes
 
 

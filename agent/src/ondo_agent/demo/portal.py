@@ -51,21 +51,23 @@ def make_handler(state: PortalState):
 
         def do_GET(self):
             if self.path == "/":
-                body = "<p>Northwind billing. <a href=\"/renewals\">Open the Q3 renewal batch</a>.</p>"
+                body = '<p>Northwind billing. <a href="/renewals">Open the Q3 renewal batch</a>.</p>'
                 return self._send(200, _page("Billing portal", body, state))
             if self.path.startswith("/renewals"):
                 rows = "".join(
-                    f"<tr><th scope=\"row\">{html.escape(n)}</th><td>{v:,}</td>"
-                    f"<td><input name=\"{slug(n)}\" value=\"{v}\" inputmode=\"numeric\" "
-                    f"aria-label=\"Annual value — {html.escape(n)}\"></td></tr>"
+                    f'<tr><th scope="row">{html.escape(n)}</th><td>{v:,}</td>'
+                    f'<td><input name="{slug(n)}" value="{v}" inputmode="numeric" '
+                    f'aria-label="Annual value — {html.escape(n)}"></td></tr>'
                     for n, v in state.values.items()
                 )
                 saved = ""
                 if "saved=" in self.path:
-                    saved = f"<p role=\"status\">Saved {self.path.split('saved=')[1]} change(s).</p>"
-                body = (f"{saved}<form method=\"post\" action=\"/renewals\"><table><thead><tr><th>Account</th>"
-                        f"<th>Current annual value</th><th>New annual value</th></tr></thead><tbody>{rows}</tbody>"
-                        f"</table><button type=\"submit\">Submit</button></form>")
+                    saved = f'<p role="status">Saved {self.path.split("saved=")[1]} change(s).</p>'
+                body = (
+                    f'{saved}<form method="post" action="/renewals"><table><thead><tr><th>Account</th>'
+                    f"<th>Current annual value</th><th>New annual value</th></tr></thead><tbody>{rows}</tbody>"
+                    f'</table><button type="submit">Submit</button></form>'
+                )
                 return self._send(200, _page("Q3 renewal batch", body, state))
             self._send(404, _page("Not found", "<p>No such page.</p>", state))
 
@@ -91,7 +93,7 @@ class Portal:
         self.url = f"http://{host}:{self.server.server_address[1]}"
         self._thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
-    def __enter__(self) -> "Portal":
+    def __enter__(self) -> Portal:
         self._thread.start()
         return self
 

@@ -43,11 +43,11 @@ async def _run(a) -> int:
 
 
 async def _replay(a) -> int:
+    from .approvals import AutoApprovals
     from .models.adapters.scripted import ReplayModel
     from .models.gateway import ModelClient
     from .models.profile import ModelProfile
     from .runtime import assemble
-    from .approvals import AutoApprovals
 
     cfg = _cfg(a.config)
     events = list(read_events(Path(a.log)))
@@ -56,8 +56,12 @@ async def _replay(a) -> int:
     model = ModelClient(ModelProfile("replay", "scripted", "replay"), ReplayModel(events))
     # Approvals replay as recorded, in order.
     decisions = list(approvals.values())
-    asm = await assemble(cfg, model=model, approvals=AutoApprovals(lambda r: decisions.pop(0) if decisions else False, by="replay"),
-                         log=EventLog.create(cfg.runs_dir / "replays"))
+    asm = await assemble(
+        cfg,
+        model=model,
+        approvals=AutoApprovals(lambda r: decisions.pop(0) if decisions else False, by="replay"),
+        log=EventLog.create(cfg.runs_dir / "replays"),
+    )
     try:
         res = await asm.harness.run(events[0].data["request"])
     finally:
@@ -199,7 +203,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--credentials", default=str(DEFAULT_CREDS))
     p = sub.add_parser("connect", help="hold the connection to the control plane and run tasks from it")
     p.add_argument("--credentials", default=str(DEFAULT_CREDS))
-    sub.add_parser("calibrate", help="measure the decision model and write gate thresholds (see --help)", add_help=False)
+    sub.add_parser(
+        "calibrate", help="measure the decision model and write gate thresholds (see --help)", add_help=False
+    )
 
     if argv is None:
         argv = sys.argv[1:]
@@ -210,8 +216,14 @@ def main(argv: list[str] | None = None) -> None:
         return
     a = ap.parse_args(argv)
     handlers = {"run": _run, "replay": _replay, "fork": _fork, "pair": _pair, "connect": _connect}
-    sync = {"trajectory": _trajectory, "search": _search, "tools-doc": _tools_doc, "demo-data": _demo_data,
-            "portal": _portal, "legacy-app": _legacy_app}
+    sync = {
+        "trajectory": _trajectory,
+        "search": _search,
+        "tools-doc": _tools_doc,
+        "demo-data": _demo_data,
+        "portal": _portal,
+        "legacy-app": _legacy_app,
+    }
     if a.cmd in handlers:
         sys.exit(asyncio.run(handlers[a.cmd](a)))
     sys.exit(sync[a.cmd](a))

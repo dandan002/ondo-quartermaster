@@ -54,11 +54,11 @@ class Message:
         return "".join(p.text for p in self.parts if isinstance(p, TextPart))
 
     @classmethod
-    def system(cls, text: str) -> "Message":
+    def system(cls, text: str) -> Message:
         return cls("system", [TextPart(text)])
 
     @classmethod
-    def user(cls, text: str) -> "Message":
+    def user(cls, text: str) -> Message:
         return cls("user", [TextPart(text)])
 
 

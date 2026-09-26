@@ -17,13 +17,16 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import time
 import uuid
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any
 
+_log = logging.getLogger("ondo.agent")
 
 # Event types. Keep this list closed: the UI and the audit export switch on it.
 RUN_STARTED = "run_started"
@@ -53,9 +56,7 @@ STEP = "step"
 
 # Events whose content enters the model's context. The trajectory view marks
 # these, and ``harness.context`` rebuilds the conversation from exactly these.
-CONTEXT_EVENTS = frozenset(
-    {SYSTEM_PROMPT, USER_MESSAGE, CONTEXT_INJECTION, MODEL_RESPONSE, TOOL_RESULT}
-)
+CONTEXT_EVENTS = frozenset({SYSTEM_PROMPT, USER_MESSAGE, CONTEXT_INJECTION, MODEL_RESPONSE, TOOL_RESULT})
 
 
 @dataclass
@@ -76,7 +77,7 @@ class Event:
         return json.dumps(asdict(self), ensure_ascii=False, sort_keys=True)
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "Event":
+    def from_dict(cls, d: dict[str, Any]) -> Event:
         return cls(**d)
 
     @property
@@ -123,7 +124,7 @@ class EventLog:
     # -- construction -------------------------------------------------------
 
     @classmethod
-    def create(cls, root: Path, run_id: str | None = None) -> "EventLog":
+    def create(cls, root: Path, run_id: str | None = None) -> EventLog:
         run_id = run_id or new_run_id()
         path = Path(root) / f"{run_id}.jsonl"
         if path.exists():
@@ -133,7 +134,7 @@ class EventLog:
         return cls(path, run_id)
 
     @classmethod
-    def open(cls, path: Path) -> "EventLog":
+    def open(cls, path: Path) -> EventLog:
         path = Path(path)
         events = list(read_events(path))
         run_id = events[0].run_id if events else path.stem
@@ -164,7 +165,7 @@ class EventLog:
                 if asyncio.iscoroutine(res):
                     asyncio.ensure_future(res)
             except Exception:  # a broken subscriber must never break the log
-                pass
+                _log.warning("event log subscriber failed", exc_info=True)
         return e
 
     def subscribe(self, fn: Subscriber) -> Callable[[], None]:
@@ -196,7 +197,7 @@ class EventLog:
 
     # -- fork ---------------------------------------------------------------
 
-    def fork(self, root: Path, upto_seq: int, new_run_id: str | None = None) -> "EventLog":
+    def fork(self, root: Path, upto_seq: int, new_run_id: str | None = None) -> EventLog:
         """Copy events [0, upto_seq] into a new run.
 
         The fork keeps every context event verbatim, so a replay of the fork with

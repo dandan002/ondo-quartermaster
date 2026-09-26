@@ -38,20 +38,40 @@ def virtual_desktop():
             break
     assert display, "no free X display"
     try:
-        procs.append(subprocess.Popen(["Xvfb", display, "-screen", "0", "1280x800x24", "+extension", "RECORD"],
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        procs.append(
+            subprocess.Popen(
+                ["Xvfb", display, "-screen", "0", "1280x800x24", "+extension", "RECORD"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        )
         for _ in range(50):
             if Path(f"/tmp/.X11-unix/X{display[1:]}").exists():
                 break
             time.sleep(0.1)
-        bus = subprocess.Popen(["dbus-daemon", "--session", "--nofork", "--print-address=1"],
-                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        bus = subprocess.Popen(
+            ["dbus-daemon", "--session", "--nofork", "--print-address=1"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
         procs.append(bus)
         address = bus.stdout.readline().strip()
-        os.environ.update({"DISPLAY": display, "DBUS_SESSION_BUS_ADDRESS": address,
-                           "GTK_MODULES": "gail:atk-bridge", "NO_AT_BRIDGE": "0"})
-        procs.append(subprocess.Popen(["/usr/libexec/at-spi-bus-launcher", "--launch-immediately"],
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        os.environ.update(
+            {
+                "DISPLAY": display,
+                "DBUS_SESSION_BUS_ADDRESS": address,
+                "GTK_MODULES": "gail:atk-bridge",
+                "NO_AT_BRIDGE": "0",
+            }
+        )
+        procs.append(
+            subprocess.Popen(
+                ["/usr/libexec/at-spi-bus-launcher", "--launch-immediately"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        )
         time.sleep(1.0)
         yield Desktop(procs)
     finally:

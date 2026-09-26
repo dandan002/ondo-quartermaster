@@ -223,4 +223,3 @@ Act on one control in a window: click it, set_text in a field (replacing its con
 | `target` | string | yes | A ref (e7) or a description. |
 | `action` | string | yes |  |
 | `text` | string | no | For set_text. |
-

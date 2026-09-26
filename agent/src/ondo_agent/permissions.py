@@ -17,9 +17,10 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 GrantKind = Literal["files", "screen", "input"]
 GRANT_KINDS: tuple[GrantKind, ...] = ("files", "screen", "input")
@@ -59,7 +60,7 @@ class Policy:
     writes_require_approval: bool = True
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any] | None) -> "Policy":
+    def from_dict(cls, d: dict[str, Any] | None) -> Policy:
         d = d or {}
         return cls(
             excluded_paths=list(d.get("excluded_paths", [])),
@@ -144,14 +145,18 @@ class PermissionBroker:
                 if self._is_excluded(Path(folder)):
                     raise PermissionDenied(
                         f"{folder} is excluded by policy and cannot be granted",
-                        kind=kind, reason="excluded_by_policy", target=folder,
+                        kind=kind,
+                        reason="excluded_by_policy",
+                        target=folder,
                     )
         if kind == "screen":
             for w in scope:
                 if self._window_excluded(w):
                     raise PermissionDenied(
                         f"{w} is excluded by policy and cannot be granted",
-                        kind=kind, reason="excluded_by_policy", target=w,
+                        kind=kind,
+                        reason="excluded_by_policy",
+                        target=w,
                     )
         g = Grant(kind, True, scope)
         self.grants[kind] = g
@@ -267,7 +272,9 @@ class PermissionBroker:
                     "outside_granted_folders": f"{path} is outside the folders you granted",
                     "grant_disabled": "file access is disabled by your administrator",
                 }[a.reason],
-                kind="files", reason=a.reason, target=a.path,
+                kind="files",
+                reason=a.reason,
+                target=a.path,
             )
         return a
 

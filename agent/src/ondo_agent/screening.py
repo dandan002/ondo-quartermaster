@@ -40,7 +40,7 @@ class Screener:
         qs = [Boolean(id=f"inj{i}", prompt=QUESTION, key="screen.injection") for i in range(len(chunks))]
         # One question per chunk, each against its own chunk as state.
         ps: list[float] = []
-        for chunk, q in zip(chunks, qs):
+        for chunk, q in zip(chunks, qs, strict=True):
             [a] = await self.model.ask(chunk, [q], log=None, purpose="screening")
             ps.append(a.probability)
         p = max(ps)
@@ -49,8 +49,14 @@ class Screener:
             log.append(
                 SCREENING,
                 f"screening:{self.model.name}",
-                {"origin": origin, "flagged": res.flagged, "probability": round(p, 4),
-                 "threshold": self.threshold, "chunks": len(chunks), "chars": len(text)},
+                {
+                    "origin": origin,
+                    "flagged": res.flagged,
+                    "probability": round(p, 4),
+                    "threshold": self.threshold,
+                    "chunks": len(chunks),
+                    "chars": len(text),
+                },
             )
         return res
 

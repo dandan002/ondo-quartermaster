@@ -61,10 +61,17 @@ class BrowserSession:
         self.last_snapshot: str = ""
 
     @classmethod
-    def from_config(cls, cfg: dict[str, Any], config) -> "BrowserSession":
+    def from_config(cls, cfg: dict[str, Any], config) -> BrowserSession:
         origins = OriginPolicy(list(cfg.get("allowed_origins", [])), list(cfg.get("blocked_origins", [])))
-        args = ["--headless" if cfg.get("headless", True) else "", "--image-responses", "omit",
-                "--snapshot-mode", "full", "--viewport-size", str(cfg.get("viewport", "1280x720"))]
+        args = [
+            "--headless" if cfg.get("headless", True) else "",
+            "--image-responses",
+            "omit",
+            "--snapshot-mode",
+            "full",
+            "--viewport-size",
+            str(cfg.get("viewport", "1280x720")),
+        ]
         if cfg.get("profile_dir"):
             # Persistent profile: the user stays signed in to their portals between runs.
             args += ["--user-data-dir", str(config.resolve(cfg["profile_dir"]))]
@@ -150,7 +157,9 @@ class BrowserSession:
                 texts.append(c.text)
             else:
                 images += 1  # never forwarded: this rung is text only
-        return CallResult("\n".join(texts), bool(getattr(res, "is_error", False) or getattr(res, "isError", False)), images)
+        return CallResult(
+            "\n".join(texts), bool(getattr(res, "is_error", False) or getattr(res, "isError", False)), images
+        )
 
     async def snapshot(self) -> CallResult:
         r = await self.call("browser_snapshot", {})
@@ -165,6 +174,6 @@ class BrowserSession:
             await self._queue.put(None)
         try:
             await asyncio.wait_for(self._task, timeout=15)
-        except (asyncio.TimeoutError, Exception):
+        except (TimeoutError, Exception):
             self._task.cancel()
         self._task = None

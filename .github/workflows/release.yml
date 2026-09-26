@@ -1,0 +1,109 @@
+name: release
+
+# Continuous delivery. Push a tag like v0.2.0 and this:
+#   1. runs the full CI workflow, and stops if anything fails;
+#   2. checks the tag matches the agent's version in agent/pyproject.toml;
+#   3. builds and pushes the control-plane image to GitHub Container Registry,
+#      with build provenance attested;
+#   4. builds the agent wheel and sdist, attests them, and publishes a GitHub
+#      release with checksums.
+# Nothing is deployed anywhere: where the image runs is the operator's decision.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    name: Tag matches the agent version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("agent/pyproject.toml","rb"))["project"]["version"])')"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag v$tag does not match agent/pyproject.toml version $version"
+            exit 1
+          fi
+
+  image:
+    name: Publish control-plane image
+    needs: [ci, version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/control-plane
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      - id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/control-plane
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  agent:
+    name: Build and publish the agent
+    needs: [ci, version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Build wheel and sdist
+        run: |
+          pip install "build==1.2.2"
+          python -m build agent --outdir dist
+          tar czf dist/ondo-agent-config.tar.gz -C agent config ondo.example.yaml
+          (cd dist && sha256sum -- * > SHA256SUMS)
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes --verify-tag

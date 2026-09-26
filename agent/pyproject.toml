@@ -41,3 +41,21 @@ where = ["src"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = ["ignore:Atspi.Action.get_action_name is deprecated:DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Correctness (E, F, W, B), modern syntax (UP), import order (I), and bandit's
+# security checks (S) — the ones a safe-commit gate should catch.
+select = ["E", "F", "W", "B", "UP", "I", "S"]
+ignore = [
+  "S101",  # assert: used for invariants the type checker cannot see
+  "S603",  # subprocess without shell: we never pass shell=True; args are lists
+  "S607",  # partial executable paths (xdotool, node): resolved from PATH on purpose
+  "E501",  # line length is the formatter's job (ruff format)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "E501"]

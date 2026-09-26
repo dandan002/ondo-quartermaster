@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 import httpx
+from conftest import base_config, spreadsheet_question_policy
 
 from ondo_agent import log as L
 from ondo_agent.log import EventLog, verify_chain
@@ -20,10 +21,8 @@ from ondo_agent.models.adapters.scripted import ReplayModel, say
 from ondo_agent.models.gateway import ModelClient, scripted_client
 from ondo_agent.models.profile import ModelProfile
 from ondo_agent.runtime import assemble
-from ondo_agent.tools.spec import to_markdown, to_messages_tools, to_openai_tools
 from ondo_agent.tools.files import file_tools
-
-from conftest import base_config, spreadsheet_question_policy
+from ondo_agent.tools.spec import to_markdown, to_messages_tools, to_openai_tools
 
 
 def _answer_from(tool_text: str) -> str:
@@ -42,15 +41,32 @@ def fake_openai_provider(drive: Path, seen: list[dict]):
         assert body["tools"][0]["type"] == "function"
         tool_msgs = [m for m in body["messages"] if m["role"] == "tool"]
         if not tool_msgs:
-            msg = {"role": "assistant", "content": None, "tool_calls": [{
-                "id": "call_a", "type": "function",
-                "function": {"name": "read_file", "arguments": json.dumps({"path": str(drive / "Q3_Renewals.xlsx")})}}]}
+            msg = {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_a",
+                        "type": "function",
+                        "function": {
+                            "name": "read_file",
+                            "arguments": json.dumps({"path": str(drive / "Q3_Renewals.xlsx")}),
+                        },
+                    }
+                ],
+            }
             finish = "tool_calls"
         else:
             msg = {"role": "assistant", "content": _answer_from(tool_msgs[-1]["content"])}
             finish = "stop"
-        return httpx.Response(200, json={"model": "gw-orchestrator", "choices": [{"message": msg, "finish_reason": finish}],
-                                         "usage": {"prompt_tokens": 1200, "completion_tokens": 40}})
+        return httpx.Response(
+            200,
+            json={
+                "model": "gw-orchestrator",
+                "choices": [{"message": msg, "finish_reason": finish}],
+                "usage": {"prompt_tokens": 1200, "completion_tokens": 40},
+            },
+        )
 
     return handler
 
@@ -62,16 +78,31 @@ def fake_messages_provider(drive: Path, seen: list[dict]):
         assert req.url.path.endswith("/v1/messages")
         assert "input_schema" in body["tools"][0]
         assert body["system"][0]["text"].startswith("You are Ondo Quartermaster")
-        results = [b for m in body["messages"] if m["role"] == "user" for b in m["content"] if b.get("type") == "tool_result"]
+        results = [
+            b for m in body["messages"] if m["role"] == "user" for b in m["content"] if b.get("type") == "tool_result"
+        ]
         if not results:
-            content = [{"type": "tool_use", "id": "toolu_1", "name": "read_file",
-                        "input": {"path": str(drive / "Q3_Renewals.xlsx")}}]
+            content = [
+                {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "read_file",
+                    "input": {"path": str(drive / "Q3_Renewals.xlsx")},
+                }
+            ]
             stop = "tool_use"
         else:
             content = [{"type": "text", "text": _answer_from(results[-1]["content"])}]
             stop = "end_turn"
-        return httpx.Response(200, json={"model": "msg-orchestrator", "content": content, "stop_reason": stop,
-                                         "usage": {"input_tokens": 1100, "output_tokens": 35}})
+        return httpx.Response(
+            200,
+            json={
+                "model": "msg-orchestrator",
+                "content": content,
+                "stop_reason": stop,
+                "usage": {"input_tokens": 1100, "output_tokens": 35},
+            },
+        )
 
     return handler
 
@@ -84,8 +115,12 @@ def _client(profile: ModelProfile, handler) -> ModelClient:
 
 PROFILES = {
     "gateway": {"adapter": "openai_chat", "model": "orchestrator", "base_url": "http://litellm.local:4000"},
-    "messages": {"adapter": "messages", "model": "orchestrator-b", "base_url": "http://messages.local",
-                 "supports_prefix_cache": "explicit"},
+    "messages": {
+        "adapter": "messages",
+        "model": "orchestrator-b",
+        "base_url": "http://messages.local",
+        "supports_prefix_cache": "explicit",
+    },
 }
 
 
@@ -114,8 +149,12 @@ async def test_ask_about_spreadsheet_replay_and_swap_provider(drive, tmp_path, a
 
         # Replay the run from the log alone: no provider involved.
         replay_log = EventLog.create(tmp_path / "replays")
-        r = await assemble(cfg, model=ModelClient(ModelProfile("replay", "scripted", "replay"), ReplayModel(log.events)),
-                           approvals=approve_all, log=replay_log)
+        r = await assemble(
+            cfg,
+            model=ModelClient(ModelProfile("replay", "scripted", "replay"), ReplayModel(log.events)),
+            approvals=approve_all,
+            log=replay_log,
+        )
         rr = await r.harness.run(log.events[0].data["request"])
         assert rr.answer == res.answer
         # The replay executed the same tool against the same file and saw the same data.
@@ -127,14 +166,17 @@ async def test_ask_about_spreadsheet_replay_and_swap_provider(drive, tmp_path, a
 
 async def test_fork_and_rerun_on_other_model(drive, tmp_path, approve_all):
     cfg = base_config(drive, tmp_path)
-    a = await assemble(cfg, model=scripted_client(spreadsheet_question_policy(drive), name="model-a"), approvals=approve_all)
+    a = await assemble(
+        cfg, model=scripted_client(spreadsheet_question_policy(drive), name="model-a"), approvals=approve_all
+    )
     await a.harness.run("Why did row 14 not match the contract?")
     # Fork just after the tool result and let a different model finish from the same history.
     cut = a.log.of_type(L.TOOL_RESULT)[0].seq
     fork = a.log.fork(cfg.runs_dir, cut)
     assert fork.events[0].data["forked_from"] == {"run_id": a.log.run_id, "seq": cut}
-    b = await assemble(cfg, model=scripted_client(lambda m, t: say("model-b answer"), name="model-b"),
-                       approvals=approve_all, log=fork)
+    b = await assemble(
+        cfg, model=scripted_client(lambda m, t: say("model-b answer"), name="model-b"), approvals=approve_all, log=fork
+    )
     res = await b.harness.run()
     assert res.answer == "model-b answer"
     assert fork.of_type(L.MODEL_RESPONSE)[-1].data["profile"] == "model-b"

@@ -22,7 +22,10 @@ def base_config(drive: Path, tmp_path: Path, **over: Any) -> Config:
     raw: dict[str, Any] = {
         "agent": {"runs_dir": str(tmp_path / "runs"), "decision_labels": str(tmp_path / "decisions.jsonl")},
         "grants": {"files": {"granted": True, "folders": [str(drive)]}},
-        "policy": {"excluded_paths": ["**/HR/**", "**/*payroll*"], "excluded_windows": ["Personal mail", "HR portal", "Password manager"]},
+        "policy": {
+            "excluded_paths": ["**/HR/**", "**/*payroll*"],
+            "excluded_windows": ["Personal mail", "HR portal", "Password manager"],
+        },
         "decision": {"provider": "rules"},
         "gates": {"rules": []},
         "budget": {"max_steps": 20},

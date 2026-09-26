@@ -22,9 +22,10 @@ import json
 import logging
 import platform
 import socket
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import websockets
@@ -45,7 +46,7 @@ class Credentials:
     token: str
 
     @classmethod
-    def load(cls, path: Path) -> "Credentials":
+    def load(cls, path: Path) -> Credentials:
         d = json.loads(Path(path).read_text())
         return cls(d["server"], d["agent_id"], d["token"])
 
@@ -56,8 +57,11 @@ class Credentials:
 
 
 def device_info() -> dict[str, str]:
-    return {"hostname": socket.gethostname(), "os": f"{platform.system()} {platform.release()}",
-            "arch": platform.machine()}
+    return {
+        "hostname": socket.gethostname(),
+        "os": f"{platform.system()} {platform.release()}",
+        "arch": platform.machine(),
+    }
 
 
 async def pair(server: str, code: str, creds_path: Path) -> Credentials:
@@ -79,8 +83,9 @@ class DeviceState:
     policy: Policy = field(default_factory=Policy)
 
     def broker(self) -> PermissionBroker:
-        return PermissionBroker({k: Grant(g.kind, g.granted, list(g.scope)) for k, g in self.grants.items()},
-                                Policy(**self.policy.__dict__))
+        return PermissionBroker(
+            {k: Grant(g.kind, g.granted, list(g.scope)) for k, g in self.grants.items()}, Policy(**self.policy.__dict__)
+        )
 
 
 class ControlPlaneAgent:
@@ -112,17 +117,27 @@ class ControlPlaneAgent:
         self.outbox.put_nowait(msg)
 
     def _hello(self) -> dict[str, Any]:
-        return {"type": "hello", "agent_id": self.creds.agent_id, "device": device_info(),
-                "grants": {k: {"granted": g.granted, "scope": g.scope} for k, g in self.state.grants.items()},
-                "capabilities": self._capabilities()}
+        return {
+            "type": "hello",
+            "agent_id": self.creds.agent_id,
+            "device": device_info(),
+            "grants": {k: {"granted": g.granted, "scope": g.scope} for k, g in self.state.grants.items()},
+            "capabilities": self._capabilities(),
+        }
 
     def _capabilities(self) -> dict[str, Any]:
         desktop = bool(self.cfg.section("desktop").get("enabled"))
         browser = bool(self.cfg.section("browser").get("enabled"))
-        return {"files": True, "browser": browser, "desktop": desktop,
-                "desktop_backend": self.cfg.section("desktop").get("backend", "auto") if desktop else None,
-                # What the screen and input grants actually unlock on this agent.
-                "screen": desktop, "input": desktop or browser, "pixels": False}
+        return {
+            "files": True,
+            "browser": browser,
+            "desktop": desktop,
+            "desktop_backend": self.cfg.section("desktop").get("backend", "auto") if desktop else None,
+            # What the screen and input grants actually unlock on this agent.
+            "screen": desktop,
+            "input": desktop or browser,
+            "pixels": False,
+        }
 
     # -- inbound ----------------------------------------------------------------
 
@@ -133,7 +148,9 @@ class ControlPlaneAgent:
             self._tasks.add(task)
             task.add_done_callback(self._tasks.discard)
         elif t == "approval":
-            self.approvals.resolve(msg["approval_id"], bool(msg["approved"]), msg.get("by", "unknown"), msg.get("note", ""))
+            self.approvals.resolve(
+                msg["approval_id"], bool(msg["approved"]), msg.get("by", "unknown"), msg.get("note", "")
+            )
         elif t == "grants":
             self._apply_grants(msg)
         elif t == "policy":
@@ -181,13 +198,26 @@ class ControlPlaneAgent:
         log_.subscribe(lambda e: self.send({"type": "event", "event": json.loads(e.to_json())}))
         self.send({"type": "run_status", "run_id": log_.run_id, "status": "running"})
         model = self.model_factory() if self.model_factory else None
-        a = await assemble(self.cfg, model=model, approvals=self.approvals, log=log_, broker=broker,
-                           user=msg.get("user", "user"),
-                           services={"browser": self.browser} if self.browser is not None else None)
+        a = await assemble(
+            self.cfg,
+            model=model,
+            approvals=self.approvals,
+            log=log_,
+            broker=broker,
+            user=msg.get("user", "user"),
+            services={"browser": self.browser} if self.browser is not None else None,
+        )
         try:
             res = await a.harness.run(msg["request"])
-            self.send({"type": "run_status", "run_id": log_.run_id, "status": res.status, "answer": res.answer,
-                       "reason": res.reason})
+            self.send(
+                {
+                    "type": "run_status",
+                    "run_id": log_.run_id,
+                    "status": res.status,
+                    "answer": res.answer,
+                    "reason": res.reason,
+                }
+            )
         except Exception as e:
             log.exception("run failed")
             self.send({"type": "run_status", "run_id": log_.run_id, "status": "error", "reason": str(e)})
@@ -202,8 +232,12 @@ class ControlPlaneAgent:
         backoff = 1.0
         while not self._stopping:
             try:
-                async with websockets.connect(url, additional_headers={"authorization": f"Bearer {self.creds.token}"},
-                                              ping_interval=20, max_size=16 * 2**20) as ws:
+                async with websockets.connect(
+                    url,
+                    additional_headers={"authorization": f"Bearer {self.creds.token}"},
+                    ping_interval=20,
+                    max_size=16 * 2**20,
+                ) as ws:
                     backoff = 1.0
                     await ws.send(json.dumps(self._hello()))
                     sender = asyncio.create_task(self._sender(ws))
